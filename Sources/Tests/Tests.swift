@@ -29,6 +29,17 @@ var example: some AttributedStringConvertible {
 
     > A blockquote.
     """.markdown() as any AttributedStringConvertible, count: 2)
+    Table(rows: [
+        .init(cells: [
+            .init(borderColor: .green, borderWidth: .init(right: 2), contents: "Table Testing"),
+            .init(contents: Embed {
+                        Circle().fill(LinearGradient(colors: [.blue, .red], startPoint: .top, endPoint: .bottom))
+                    .frame(width: 100, height: 100)
+                } )
+        ])
+    ])
+    .modify { $0.size = 10 }
+    
 //    NSImage(systemSymbolName: "hand.wave", accessibilityDescription: nil)!
     Embed {
         HStack {
