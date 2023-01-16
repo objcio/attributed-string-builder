@@ -4,13 +4,7 @@ public protocol AttributedStringConvertible {
     func attributedString(environment: Environment) async -> [NSAttributedString]
 }
 
-public struct Environment {
-    public init(attributes: Attributes = Attributes()) {
-        self.attributes = attributes
-    }
 
-    public var attributes = Attributes()
-}
 
 extension String: AttributedStringConvertible {
     public func attributedString(environment: Environment) -> [NSAttributedString] {
