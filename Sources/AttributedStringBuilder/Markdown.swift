@@ -184,7 +184,7 @@ fileprivate struct Markdown: AttributedStringConvertible {
     var content: String
     var stylesheet: any Stylesheet
 
-    func attributedString(environment: Environment) -> [NSAttributedString] {
+    func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         let doc = Document(parsing: content)
         var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet)
         walker.visit(doc)

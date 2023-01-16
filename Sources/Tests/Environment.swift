@@ -5,7 +5,7 @@ struct Test: EnvironmentKey {
     static let defaultValue: String = "Test"
 }
 
-extension Environment {
+extension EnvironmentValues {
     var test: String {
         get { self[Test.self] }
         set { self[Test.self] = newValue }

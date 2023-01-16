@@ -19,7 +19,7 @@ public struct Table: AttributedStringConvertible {
     public var rows: [TableRow]
     public var contentWidth: Width
 
-    public func attributedString(environment: Environment) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
         guard !rows.isEmpty else { return [] }
         let result = NSMutableAttributedString()
         let table = NSTextTable()
@@ -40,7 +40,7 @@ public struct TableRow {
 
     public var cells: [TableCell]
 
-    func render(row: Int, table: NSTextTable, environment: Environment, result: NSMutableAttributedString) async {
+    func render(row: Int, table: NSTextTable, environment: EnvironmentValues, result: NSMutableAttributedString) async {
         for (column, cell) in cells.enumerated() {
             let block = NSTextTableBlock(table: table, startingRow: row, rowSpan: 1, startingColumn: column, columnSpan: 1)
             if let w = cell.width {
@@ -74,7 +74,7 @@ public struct TableCell {
     public var width: Table.Width?
     public var alignment: NSTextAlignment = .left
 
-    func render(block: NSTextTableBlock, environment: Environment, result: NSMutableAttributedString) async {
+    func render(block: NSTextTableBlock, environment: EnvironmentValues, result: NSMutableAttributedString) async {
         block.setBorderColor(borderColor)
         for (edge, value) in borderWidth.allEdges {
             block.setWidth(value.value, type: value.type, for: .border, edge: edge)

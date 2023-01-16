@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Environment {
+public struct EnvironmentValues {
     public init(attributes: Attributes = Attributes()) {
         self.attributes = attributes
     }
@@ -25,25 +25,25 @@ public protocol EnvironmentKey {
 }
 
 public struct EnvironmentReader<Part, Content>: AttributedStringConvertible where Content: AttributedStringConvertible {
-    public init(_ keyPath: KeyPath<Environment, Part>, @AttributedStringBuilder content: @escaping (Part) -> Content) {
+    public init(_ keyPath: KeyPath<EnvironmentValues, Part>, @AttributedStringBuilder content: @escaping (Part) -> Content) {
         self.keyPath = keyPath
         self.content = content
     }
 
-    var keyPath: KeyPath<Environment, Part>
+    var keyPath: KeyPath<EnvironmentValues, Part>
     var content: (Part) -> Content
 
-    public func attributedString(environment: Environment) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
         await content(environment[keyPath: keyPath]).attributedString(environment: environment)
     }
 }
 
 fileprivate struct EnvironmentModifier<Part, Content>: AttributedStringConvertible where Content: AttributedStringConvertible {
-    var keyPath: WritableKeyPath<Environment, Part>
+    var keyPath: WritableKeyPath<EnvironmentValues, Part>
     var modify: (inout Part) -> ()
     var content: Content
 
-    public func attributedString(environment: Environment) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
         var copy = environment
         modify(&copy[keyPath: keyPath])
         return await content.attributedString(environment: copy)
@@ -51,7 +51,7 @@ fileprivate struct EnvironmentModifier<Part, Content>: AttributedStringConvertib
 }
 
 extension AttributedStringConvertible {
-    public func environment<Value>(_ keyPath: WritableKeyPath<Environment, Value>, value: Value) -> some AttributedStringConvertible {
+    public func environment<Value>(_ keyPath: WritableKeyPath<EnvironmentValues, Value>, value: Value) -> some AttributedStringConvertible {
         EnvironmentModifier(keyPath: keyPath, modify: { $0 = value }, content: self)
     }
 }
