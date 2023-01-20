@@ -1,8 +1,7 @@
 import Markdown
 import AppKit
 
-public struct DefaultStylesheet: Stylesheet {
-}
+public struct DefaultStylesheet: Stylesheet { }
 
 extension Stylesheet where Self == DefaultStylesheet {
     static public var `default`: Self {
@@ -116,7 +115,7 @@ struct AttributedStringWalker: MarkupWalker {
         visit(list: unorderedList)
     }
 
-    mutating func visit(list: ListItemContainer) {
+    mutating private func visit(list: ListItemContainer) {
         let original = attributes
         defer { attributes = original }
 
@@ -141,9 +140,21 @@ struct AttributedStringWalker: MarkupWalker {
                 prefixAttributes.paragraphSpacing = original.paragraphSpacing
             }
 
-            let prefix = isOrdered ? stylesheet.orderedListItemPrefix(number: number) : stylesheet.unorderedListItemPrefix
+            // Append list item prefix
+            let prefix: String
+            switch (item.checkbox, isOrdered) {
+            case (.checked, _):
+                prefix = stylesheet.checkboxCheckedPrefix
+            case (.unchecked, _):
+                prefix = stylesheet.checkboxUncheckedPrefix
+            case (_, true):
+                prefix = stylesheet.orderedListItemPrefix(number: number)
+            case (_, false):
+                prefix = stylesheet.unorderedListItemPrefix
+            }
             attributedString.append(NSAttributedString(string: "\t\(prefix)\t", attributes: prefixAttributes))
 
+            // Visit list item contents
             visit(item)
 
             if number < list.childCount {

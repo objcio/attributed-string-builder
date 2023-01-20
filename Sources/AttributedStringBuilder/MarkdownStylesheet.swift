@@ -21,6 +21,8 @@ public protocol Stylesheet {
     func orderedListItemPrefix(attributes: inout Attributes)
     var unorderedListItemPrefix: String { get }
     func unorderedListItemPrefix(attributes: inout Attributes)
+    var checkboxCheckedPrefix: String { get }
+    var checkboxUncheckedPrefix: String { get }
     func footnote(attributes: inout Attributes)
 }
 
@@ -56,6 +58,14 @@ extension Stylesheet {
     }
 
     public func unorderedListItemPrefix(attributes: inout Attributes) { }
+    
+    public var checkboxCheckedPrefix: String {
+        "􀃳"
+    }
+    
+    public var checkboxUncheckedPrefix: String {
+        "􀂒"
+    }
 
     public func footnote(attributes: inout Attributes) {
         attributes.size *= 0.8

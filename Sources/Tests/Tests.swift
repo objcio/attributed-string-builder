@@ -24,6 +24,11 @@ var example: some AttributedStringConvertible {
     1. One
     1. Two
     1. Three
+    
+    Checklist:
+    
+    - [ ] Unchecked item
+    - [x] Checked item
 
     Another *paragraph*.
 
