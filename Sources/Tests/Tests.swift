@@ -51,7 +51,7 @@ var example: some AttributedStringConvertible {
     }
 }
 
-let sampleAttributes = Attributes(family: "Tiempos Text", size: 16, textColor: .black, paragraphSpacing: 10)
+let sampleAttributes = Attributes(family: "Georgia", size: 16, textColor: .black, paragraphSpacing: 10)
 
 
 class Tests: XCTestCase {
