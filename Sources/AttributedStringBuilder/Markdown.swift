@@ -126,32 +126,31 @@ struct AttributedStringWalker: MarkupWalker {
         attributes.headIndent += attributes.tabStops[1].location
         attributes.paragraphSpacing = 0 // Remove spacing between list items
 
-        var prefixAttributes = attributes
-        if isOrdered {
-            stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
-        } else {
-            stylesheet.unorderedListItemPrefix(attributes: &prefixAttributes)
-        }
-
         for (item, number) in zip(list.listItems, 1...) {
+            // Append list item prefix
+            let prefix: String
+            var prefixAttributes = attributes
+            switch (item.checkbox, isOrdered) {
+            case (.checked, _):
+                prefix = stylesheet.checkboxCheckedPrefix
+                stylesheet.checkboxCheckedPrefix(attributes: &prefixAttributes)
+            case (.unchecked, _):
+                prefix = stylesheet.checkboxUncheckedPrefix
+                stylesheet.checkboxUncheckedPrefix(attributes: &prefixAttributes)
+            case (_, true):
+                prefix = stylesheet.orderedListItemPrefix(number: number)
+                stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
+            case (_, false):
+                prefix = stylesheet.unorderedListItemPrefix
+                stylesheet.unorderedListItemPrefix(attributes: &prefixAttributes)
+            }
+            
             if number == list.childCount {
                 // Restore spacing for last list item
                 attributes.paragraphSpacing = original.paragraphSpacing
                 prefixAttributes.paragraphSpacing = original.paragraphSpacing
             }
-
-            // Append list item prefix
-            let prefix: String
-            switch (item.checkbox, isOrdered) {
-            case (.checked, _):
-                prefix = stylesheet.checkboxCheckedPrefix
-            case (.unchecked, _):
-                prefix = stylesheet.checkboxUncheckedPrefix
-            case (_, true):
-                prefix = stylesheet.orderedListItemPrefix(number: number)
-            case (_, false):
-                prefix = stylesheet.unorderedListItemPrefix
-            }
+            
             attributedString.append(NSAttributedString(string: "\t\(prefix)\t", attributes: prefixAttributes))
 
             // Visit list item contents
@@ -167,7 +166,7 @@ struct AttributedStringWalker: MarkupWalker {
         let original = attributes
         defer { attributes = original }
 
-        stylesheet.listItem(attributes: &attributes)
+        stylesheet.listItem(attributes: &attributes, checkbox: listItem.checkbox?.bool)
 
         for child in listItem.children {
             visit(child)
@@ -188,6 +187,17 @@ struct AttributedStringWalker: MarkupWalker {
         let thematicBreak = NSAttributedString(string: "\n\r\u{00A0} \u{0009} \u{00A0}\n\n", attributes: [.strikethroughStyle: NSUnderlineStyle.single.rawValue, .strikethroughColor: NSColor.gray])
         attributedString.append(thematicBreak)
 
+    }
+}
+
+extension Checkbox {
+    var bool: Bool {
+        get {
+            self == .checked
+        }
+        set {
+            self = newValue ? .checked : .unchecked
+        }
     }
 }
 
