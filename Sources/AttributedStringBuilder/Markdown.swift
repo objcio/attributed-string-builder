@@ -192,19 +192,31 @@ struct AttributedStringWalker: MarkupWalker {
 }
 
 fileprivate struct Markdown: AttributedStringConvertible {
-    var content: String
+    var document: Document
     var stylesheet: any Stylesheet
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        let doc = Document(parsing: content)
         var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet)
-        walker.visit(doc)
+        walker.visit(document)
         return [walker.attributedString]
+    }
+}
+
+extension Markdown {
+    init(string: String, stylesheet: any Stylesheet) {
+        self.document = Document(parsing: string)
+        self.stylesheet = stylesheet
     }
 }
 
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default) -> some AttributedStringConvertible {
-        Markdown(content: self, stylesheet: stylesheet)
+        Markdown(string: self, stylesheet: stylesheet)
+    }
+}
+
+extension Document {
+    public func markdown(stylesheet: any Stylesheet = .default) -> some AttributedStringConvertible {
+        Markdown(document: self, stylesheet: stylesheet)
     }
 }
