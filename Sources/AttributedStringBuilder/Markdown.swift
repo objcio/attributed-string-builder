@@ -9,9 +9,27 @@ extension Stylesheet where Self == DefaultStylesheet {
     }
 }
 
+/// Container of info needed to render checkboxes as links.
+public struct CheckboxData {
+    /// - Parameters:
+    ///   - scheme: Scheme for the URL used to toggle a checkbox.
+    ///   - endpoint: First path component for the URL used to toggle a checkbox, e.g. `"toggle"`.
+    ///   - checkboxes: For looking up the ID of a checkbox.
+    public init(scheme: String, endpoint: String, checkboxes: [CheckboxItem]) {
+        self.scheme = scheme
+        self.endpoint = endpoint
+        self.checkboxes = checkboxes
+    }
+    
+    let scheme: String
+    let endpoint: String
+    let checkboxes: [CheckboxItem]
+}
+
 struct AttributedStringWalker: MarkupWalker {
     var attributes: Attributes
     let stylesheet: Stylesheet
+    var checkboxData: CheckboxData?
 
     var attributedString = NSMutableAttributedString()
 
@@ -130,13 +148,21 @@ struct AttributedStringWalker: MarkupWalker {
             // Append list item prefix
             let prefix: String
             var prefixAttributes = attributes
+            
             switch (item.checkbox, isOrdered) {
-            case (.checked, _):
-                prefix = stylesheet.checkboxCheckedPrefix
-                stylesheet.checkboxCheckedPrefix(attributes: &prefixAttributes)
-            case (.unchecked, _):
-                prefix = stylesheet.checkboxUncheckedPrefix
-                stylesheet.checkboxUncheckedPrefix(attributes: &prefixAttributes)
+            case (let checkbox?, _):
+                switch checkbox {
+                case .checked:
+                    prefix = stylesheet.checkboxCheckedPrefix
+                    stylesheet.checkboxCheckedPrefix(attributes: &prefixAttributes)
+                case .unchecked:
+                    prefix = stylesheet.checkboxUncheckedPrefix
+                    stylesheet.checkboxUncheckedPrefix(attributes: &prefixAttributes)
+                }
+                if let scheme = checkboxData?.scheme, let checkboxItem = checkboxData?.checkboxes.first(where: { $0.isIdentical(to: item) }) {
+                    let url = URL(string: "\(scheme):toggle/\(checkboxItem.id)/\(!checkboxItem.isChecked)")!
+                    prefixAttributes.link = url
+                }
             case (_, true):
                 prefix = stylesheet.orderedListItemPrefix(number: number)
                 stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
@@ -204,9 +230,10 @@ extension Checkbox {
 fileprivate struct Markdown: AttributedStringConvertible {
     var document: Document
     var stylesheet: any Stylesheet
+    var checkboxData: CheckboxData?
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet)
+        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, checkboxData: checkboxData)
         walker.visit(document)
         return [walker.attributedString]
     }
@@ -216,6 +243,7 @@ extension Markdown {
     init(string: String, stylesheet: any Stylesheet) {
         self.document = Document(parsing: string)
         self.stylesheet = stylesheet
+        self.checkboxData = nil
     }
 }
 
@@ -226,7 +254,7 @@ extension String {
 }
 
 extension Document {
-    public func markdown(stylesheet: any Stylesheet = .default) -> some AttributedStringConvertible {
-        Markdown(document: self, stylesheet: stylesheet)
+    public func markdown(stylesheet: any Stylesheet = .default, checkboxData: CheckboxData? = nil) -> some AttributedStringConvertible {
+        Markdown(document: self, stylesheet: stylesheet, checkboxData: checkboxData)
     }
 }
