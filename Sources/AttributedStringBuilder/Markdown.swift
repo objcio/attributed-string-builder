@@ -1,8 +1,7 @@
 import Markdown
 import AppKit
 
-public struct DefaultStylesheet: Stylesheet {
-}
+public struct DefaultStylesheet: Stylesheet { }
 
 extension Stylesheet where Self == DefaultStylesheet {
     static public var `default`: Self {
@@ -13,6 +12,7 @@ extension Stylesheet where Self == DefaultStylesheet {
 struct AttributedStringWalker: MarkupWalker {
     var attributes: Attributes
     let stylesheet: Stylesheet
+    var makeCheckboxURL: ((ListItem) -> URL?)?
 
     var attributedString = NSMutableAttributedString()
 
@@ -116,7 +116,7 @@ struct AttributedStringWalker: MarkupWalker {
         visit(list: unorderedList)
     }
 
-    mutating func visit(list: ListItemContainer) {
+    mutating private func visit(list: ListItemContainer) {
         let original = attributes
         defer { attributes = original }
 
@@ -127,23 +127,41 @@ struct AttributedStringWalker: MarkupWalker {
         attributes.headIndent += attributes.tabStops[1].location
         attributes.paragraphSpacing = 0 // Remove spacing between list items
 
-        var prefixAttributes = attributes
-        if isOrdered {
-            stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
-        } else {
-            stylesheet.unorderedListItemPrefix(attributes: &prefixAttributes)
-        }
-
         for (item, number) in zip(list.listItems, 1...) {
+            // Append list item prefix
+            let prefix: String
+            var prefixAttributes = attributes
+            
+            switch (item.checkbox, isOrdered) {
+            case (let checkbox?, _):
+                switch checkbox {
+                case .checked:
+                    prefix = stylesheet.checkboxCheckedPrefix
+                    stylesheet.checkboxCheckedPrefix(attributes: &prefixAttributes)
+                case .unchecked:
+                    prefix = stylesheet.checkboxUncheckedPrefix
+                    stylesheet.checkboxUncheckedPrefix(attributes: &prefixAttributes)
+                }
+                if let url = makeCheckboxURL?(item) {
+                    prefixAttributes.link = url
+                }
+            case (_, true):
+                prefix = stylesheet.orderedListItemPrefix(number: number)
+                stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
+            case (_, false):
+                prefix = stylesheet.unorderedListItemPrefix
+                stylesheet.unorderedListItemPrefix(attributes: &prefixAttributes)
+            }
+            
             if number == list.childCount {
                 // Restore spacing for last list item
                 attributes.paragraphSpacing = original.paragraphSpacing
                 prefixAttributes.paragraphSpacing = original.paragraphSpacing
             }
-
-            let prefix = isOrdered ? stylesheet.orderedListItemPrefix(number: number) : stylesheet.unorderedListItemPrefix
+            
             attributedString.append(NSAttributedString(string: "\t\(prefix)\t", attributes: prefixAttributes))
 
+            // Visit list item contents
             visit(item)
 
             if number < list.childCount {
@@ -156,7 +174,7 @@ struct AttributedStringWalker: MarkupWalker {
         let original = attributes
         defer { attributes = original }
 
-        stylesheet.listItem(attributes: &attributes)
+        stylesheet.listItem(attributes: &attributes, checkbox: listItem.checkbox?.bool)
 
         for child in listItem.children {
             visit(child)
@@ -180,20 +198,45 @@ struct AttributedStringWalker: MarkupWalker {
     }
 }
 
+extension Checkbox {
+    var bool: Bool {
+        get {
+            self == .checked
+        }
+        set {
+            self = newValue ? .checked : .unchecked
+        }
+    }
+}
+
 fileprivate struct Markdown: AttributedStringConvertible {
-    var content: String
+    var document: Document
     var stylesheet: any Stylesheet
+    var makeCheckboxURL: ((ListItem) -> URL?)?
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        let doc = Document(parsing: content)
-        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet)
-        walker.visit(doc)
+        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        walker.visit(document)
         return [walker.attributedString]
+    }
+}
+
+extension Markdown {
+    init(string: String, stylesheet: any Stylesheet) {
+        self.document = Document(parsing: string)
+        self.stylesheet = stylesheet
+        self.makeCheckboxURL = nil
     }
 }
 
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default) -> some AttributedStringConvertible {
-        Markdown(content: self, stylesheet: stylesheet)
+        Markdown(string: self, stylesheet: stylesheet)
+    }
+}
+
+extension Document {
+    public func markdown(stylesheet: any Stylesheet = .default, makeCheckboxURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
+        Markdown(document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
     }
 }

@@ -16,11 +16,15 @@ public protocol Stylesheet {
     func blockQuote(attributes: inout Attributes)
     func link(attributes: inout Attributes)
     func heading(level: Int, attributes: inout Attributes)
-    func listItem(attributes: inout Attributes)
+    func listItem(attributes: inout Attributes, checkbox: Bool?)
     func orderedListItemPrefix(number: Int) -> String
     func orderedListItemPrefix(attributes: inout Attributes)
     var unorderedListItemPrefix: String { get }
     func unorderedListItemPrefix(attributes: inout Attributes)
+    var checkboxCheckedPrefix: String { get }
+    func checkboxCheckedPrefix(attributes: inout Attributes)
+    var checkboxUncheckedPrefix: String { get }
+    func checkboxUncheckedPrefix(attributes: inout Attributes)
     func footnote(attributes: inout Attributes)
 }
 
@@ -43,7 +47,11 @@ extension Stylesheet {
         attributes.headIndent = 20
     }
 
-    public func listItem(attributes: inout Attributes) { }
+    public func listItem(attributes: inout Attributes, checkbox: Bool?) {
+        if checkbox == true {
+            attributes.textColor = .secondaryLabelColor
+        }
+    }
 
     public func orderedListItemPrefix(number: Int) -> String {
         "\(number)."
@@ -56,6 +64,22 @@ extension Stylesheet {
     }
 
     public func unorderedListItemPrefix(attributes: inout Attributes) { }
+    
+    public var checkboxCheckedPrefix: String {
+        "􀃳"
+    }
+    
+    public func checkboxCheckedPrefix(attributes: inout Attributes) {
+        attributes.textColor = .controlAccentColor
+    }
+    
+    public var checkboxUncheckedPrefix: String {
+        "􀂒"
+    }
+    
+    public func checkboxUncheckedPrefix(attributes: inout Attributes) {
+        attributes.textColor = .secondaryLabelColor
+    }
 
     public func footnote(attributes: inout Attributes) {
         attributes.size *= 0.8
