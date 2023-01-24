@@ -10,7 +10,15 @@ import Markdown
 import SwiftUI
 
 public struct CheckboxItem: Equatable, Identifiable {
-    public let id: Int
+    public struct ID: Equatable, Hashable {
+        let _hashValue: Int
+        
+        init(_ sourceLocation: SourceRange) {
+            self._hashValue = sourceLocation.hashValue
+        }
+    }
+    
+    public let id: ID
     var isChecked: Bool
     
     init?(_ listItem: ListItem) {
@@ -23,14 +31,18 @@ public struct CheckboxItem: Equatable, Identifiable {
         self.isChecked = checkbox == .checked
     }
     
-    func isIdentical(to other: ListItem) -> Bool {
+    public func isIdentical(to other: ListItem) -> Bool {
         self.id == Self.id(for: other)
     }
     
-    static private func id(for listItem: ListItem) -> Int? {
+    static private func id(for listItem: ListItem) -> ID? {
         // Take child because its reported source location is stable
         let node = listItem.childCount > 0 ? listItem.child(at: 0)! : listItem
-        return node.range?.hashValue
+        return node.range.map { ID($0) }
+    }
+    
+    public func toggleURL(scheme: String, endpoint: String = "toggle") -> URL? {
+        URL(string: "\(scheme):\(endpoint)/\(id._hashValue)/\(!isChecked)")
     }
 }
 
@@ -41,8 +53,8 @@ public final class CheckboxModel: ObservableObject {
     
     @Published public var checkboxItems: [CheckboxItem] = []
     
-    public func set(isChecked: Bool, id: CheckboxItem.ID) {
-        guard let index = checkboxItems.firstIndex(where: { $0.id == id })
+    public func set(isChecked: Bool, id: Int) {
+        guard let index = checkboxItems.firstIndex(where: { $0.id._hashValue == id })
         else {
             return
         }

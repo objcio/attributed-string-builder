@@ -9,27 +9,10 @@ extension Stylesheet where Self == DefaultStylesheet {
     }
 }
 
-/// Container of info needed to render checkboxes as links.
-public struct CheckboxData {
-    /// - Parameters:
-    ///   - scheme: Scheme for the URL used to toggle a checkbox.
-    ///   - endpoint: First path component for the URL used to toggle a checkbox, e.g. `"toggle"`.
-    ///   - checkboxes: For looking up the ID of a checkbox.
-    public init(scheme: String, endpoint: String, checkboxes: [CheckboxItem]) {
-        self.scheme = scheme
-        self.endpoint = endpoint
-        self.checkboxes = checkboxes
-    }
-    
-    let scheme: String
-    let endpoint: String
-    let checkboxes: [CheckboxItem]
-}
-
 struct AttributedStringWalker: MarkupWalker {
     var attributes: Attributes
     let stylesheet: Stylesheet
-    var checkboxData: CheckboxData?
+    var makeURL: ((ListItem) -> URL?)?
 
     var attributedString = NSMutableAttributedString()
 
@@ -159,8 +142,7 @@ struct AttributedStringWalker: MarkupWalker {
                     prefix = stylesheet.checkboxUncheckedPrefix
                     stylesheet.checkboxUncheckedPrefix(attributes: &prefixAttributes)
                 }
-                if let scheme = checkboxData?.scheme, let checkboxItem = checkboxData?.checkboxes.first(where: { $0.isIdentical(to: item) }) {
-                    let url = URL(string: "\(scheme):toggle/\(checkboxItem.id)/\(!checkboxItem.isChecked)")!
+                if let url = makeURL?(item) {
                     prefixAttributes.link = url
                 }
             case (_, true):
@@ -230,10 +212,10 @@ extension Checkbox {
 fileprivate struct Markdown: AttributedStringConvertible {
     var document: Document
     var stylesheet: any Stylesheet
-    var checkboxData: CheckboxData?
+    var makeURL: ((ListItem) -> URL?)?
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, checkboxData: checkboxData)
+        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeURL: makeURL)
         walker.visit(document)
         return [walker.attributedString]
     }
@@ -243,7 +225,7 @@ extension Markdown {
     init(string: String, stylesheet: any Stylesheet) {
         self.document = Document(parsing: string)
         self.stylesheet = stylesheet
-        self.checkboxData = nil
+        self.makeURL = nil
     }
 }
 
@@ -254,7 +236,7 @@ extension String {
 }
 
 extension Document {
-    public func markdown(stylesheet: any Stylesheet = .default, checkboxData: CheckboxData? = nil) -> some AttributedStringConvertible {
-        Markdown(document: self, stylesheet: stylesheet, checkboxData: checkboxData)
+    public func markdown(stylesheet: any Stylesheet = .default, makeURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
+        Markdown(document: self, stylesheet: stylesheet, makeURL: makeURL)
     }
 }
