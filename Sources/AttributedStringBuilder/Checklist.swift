@@ -11,10 +11,10 @@ import SwiftUI
 
 public struct CheckboxItem: Equatable, Identifiable {
     public struct ID: Equatable, Hashable {
-        let _hashValue: Int
+        let rawValue: Int
         
         init(_ sourceLocation: SourceRange) {
-            self._hashValue = sourceLocation.hashValue
+            self.rawValue = sourceLocation.hashValue
         }
     }
     
@@ -42,7 +42,7 @@ public struct CheckboxItem: Equatable, Identifiable {
     }
     
     public func toggleURL(scheme: String, endpoint: String = "toggle") -> URL? {
-        URL(string: "\(scheme):\(endpoint)/\(id._hashValue)/\(!isChecked)")
+        URL(string: "\(scheme):\(endpoint)/\(id.rawValue)/\(!isChecked)")
     }
 }
 
@@ -54,7 +54,7 @@ public final class CheckboxModel: ObservableObject {
     @Published public var checkboxItems: [CheckboxItem] = []
     
     public func set(isChecked: Bool, id: Int) {
-        guard let index = checkboxItems.firstIndex(where: { $0.id._hashValue == id })
+        guard let index = checkboxItems.firstIndex(where: { $0.id.rawValue == id })
         else {
             return
         }
