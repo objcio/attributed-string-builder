@@ -16,6 +16,10 @@ public struct CheckboxItem: Equatable, Identifiable {
         init(_ sourceLocation: SourceRange) {
             self.rawValue = sourceLocation.hashValue
         }
+        
+        fileprivate init(rawValue: Int) {
+            self.rawValue = rawValue
+        }
     }
     
     public let id: ID
@@ -41,8 +45,29 @@ public struct CheckboxItem: Equatable, Identifiable {
         return node.range.map { ID($0) }
     }
     
-    public func toggleURL(scheme: String, endpoint: String = "toggle") -> URL? {
+    // MARK: - URLs
+    
+    /// Encodes `self` into a `URL`.
+    /// - Returns: The URL if the combination of components results in a valid result, or `nil` otherwise.
+    public func url(scheme: String, endpoint: String) -> URL? {
         URL(string: "\(scheme):\(endpoint)/\(id.rawValue)/\(!isChecked)")
+    }
+    
+    /// Parses a `URL` into a `CheckboxItem`.
+    public init?(url: URL, scheme: String, endpoint: String) {
+        guard url.scheme == scheme,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else { return nil }
+        
+        let pathComponents = components.path.split(separator: "/", omittingEmptySubsequences: true)
+        
+        guard pathComponents.count == 3,
+              pathComponents[0] == endpoint,
+              let raw = Int(pathComponents[1])
+        else { return nil }
+        
+        self.id = ID(rawValue: raw)
+        self.isChecked = pathComponents[2] == "true"
     }
 }
 
@@ -53,12 +78,12 @@ public final class CheckboxModel: ObservableObject {
     
     @Published public var checkboxItems: [CheckboxItem] = []
     
-    public func set(isChecked: Bool, id: Int) {
-        guard let index = checkboxItems.firstIndex(where: { $0.id.rawValue == id })
+    public func update(checkboxItem: CheckboxItem) {
+        guard let index = checkboxItems.firstIndex(where: { $0.id == checkboxItem.id })
         else {
             return
         }
-        checkboxItems[index].isChecked = isChecked
+        checkboxItems[index].isChecked = checkboxItem.isChecked
     }
     
     public func rewrite(document: Document) -> Document {
