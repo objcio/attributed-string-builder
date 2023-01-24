@@ -12,7 +12,7 @@ extension Stylesheet where Self == DefaultStylesheet {
 struct AttributedStringWalker: MarkupWalker {
     var attributes: Attributes
     let stylesheet: Stylesheet
-    var makeURL: ((ListItem) -> URL?)?
+    var makeCheckboxURL: ((ListItem) -> URL?)?
 
     var attributedString = NSMutableAttributedString()
 
@@ -142,7 +142,7 @@ struct AttributedStringWalker: MarkupWalker {
                     prefix = stylesheet.checkboxUncheckedPrefix
                     stylesheet.checkboxUncheckedPrefix(attributes: &prefixAttributes)
                 }
-                if let url = makeURL?(item) {
+                if let url = makeCheckboxURL?(item) {
                     prefixAttributes.link = url
                 }
             case (_, true):
@@ -212,10 +212,10 @@ extension Checkbox {
 fileprivate struct Markdown: AttributedStringConvertible {
     var document: Document
     var stylesheet: any Stylesheet
-    var makeURL: ((ListItem) -> URL?)?
+    var makeCheckboxURL: ((ListItem) -> URL?)?
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeURL: makeURL)
+        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
         walker.visit(document)
         return [walker.attributedString]
     }
@@ -225,7 +225,7 @@ extension Markdown {
     init(string: String, stylesheet: any Stylesheet) {
         self.document = Document(parsing: string)
         self.stylesheet = stylesheet
-        self.makeURL = nil
+        self.makeCheckboxURL = nil
     }
 }
 
@@ -236,7 +236,7 @@ extension String {
 }
 
 extension Document {
-    public func markdown(stylesheet: any Stylesheet = .default, makeURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
-        Markdown(document: self, stylesheet: stylesheet, makeURL: makeURL)
+    public func markdown(stylesheet: any Stylesheet = .default, makeCheckboxURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
+        Markdown(document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
     }
 }
