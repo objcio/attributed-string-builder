@@ -66,21 +66,23 @@ extension Stylesheet {
     public func unorderedListItemPrefix(attributes: inout Attributes) { }
     
     public var checkboxCheckedPrefix: String {
-        "􀃳"
+        "[x]" // TODO: fix NSTextView image clicks for "􀃳"
     }
     
     public func checkboxCheckedPrefix(attributes: inout Attributes) {
         attributes.textColor = .controlAccentColor
         attributes.cursor = .arrow
+        attributes.family = "Monaco" // monospaced
     }
     
     public var checkboxUncheckedPrefix: String {
-        "􀂒"
+        "[ ]" // TODO: fix NSTextView image clicks for "􀂒"
     }
     
     public func checkboxUncheckedPrefix(attributes: inout Attributes) {
         attributes.textColor = .secondaryLabelColor
         attributes.cursor = .arrow
+        attributes.family = "Monaco" // monospaced
     }
 
     public func footnote(attributes: inout Attributes) {
