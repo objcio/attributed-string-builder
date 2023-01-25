@@ -132,8 +132,7 @@ struct AttributedStringWalker: MarkupWalker {
             let prefix: String
             var prefixAttributes = attributes
             
-            switch (item.checkbox, isOrdered) {
-            case (let checkbox?, _):
+            if let checkbox = item.checkbox {
                 switch checkbox {
                 case .checked:
                     prefix = stylesheet.checkboxCheckedPrefix
@@ -145,12 +144,14 @@ struct AttributedStringWalker: MarkupWalker {
                 if let url = makeCheckboxURL?(item) {
                     prefixAttributes.link = url
                 }
-            case (_, true):
-                prefix = stylesheet.orderedListItemPrefix(number: number)
-                stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
-            case (_, false):
-                prefix = stylesheet.unorderedListItemPrefix
-                stylesheet.unorderedListItemPrefix(attributes: &prefixAttributes)
+            } else {
+                if isOrdered {
+                    stylesheet.orderedListItemPrefix(attributes: &prefixAttributes)
+                    prefix = stylesheet.orderedListItemPrefix(number: number)
+                } else {
+                    stylesheet.unorderedListItemPrefix(attributes: &prefixAttributes)
+                    prefix = stylesheet.unorderedListItemPrefix
+                }
             }
             
             if number == list.childCount {
@@ -159,7 +160,9 @@ struct AttributedStringWalker: MarkupWalker {
                 prefixAttributes.paragraphSpacing = original.paragraphSpacing
             }
             
-            attributedString.append(NSAttributedString(string: "\t\(prefix)\t", attributes: prefixAttributes))
+            attributedString.append(NSAttributedString(string: "\t", attributes: attributes))
+            attributedString.append(NSAttributedString(string: prefix, attributes: prefixAttributes))
+            attributedString.append(NSAttributedString(string: "\t", attributes: attributes))
 
             // Visit list item contents
             visit(item)
