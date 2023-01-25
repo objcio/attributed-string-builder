@@ -71,6 +71,7 @@ extension Stylesheet {
     
     public func checkboxCheckedPrefix(attributes: inout Attributes) {
         attributes.textColor = .controlAccentColor
+        attributes.cursor = .arrow
     }
     
     public var checkboxUncheckedPrefix: String {
@@ -79,6 +80,7 @@ extension Stylesheet {
     
     public func checkboxUncheckedPrefix(attributes: inout Attributes) {
         attributes.textColor = .secondaryLabelColor
+        attributes.cursor = .arrow
     }
 
     public func footnote(attributes: inout Attributes) {
