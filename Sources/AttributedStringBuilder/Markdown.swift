@@ -164,9 +164,7 @@ struct AttributedStringWalker: MarkupWalker {
             attributedString.append(NSAttributedString(string: prefix, attributes: prefixAttributes))
             attributedString.append(NSAttributedString(string: "\t", attributes: attributes))
 
-            // Visit list item contents
             visit(item)
-
             if number < list.childCount {
                 attributedString.append(NSAttributedString(string: "\n", attributes: attributes))
             }
@@ -179,7 +177,13 @@ struct AttributedStringWalker: MarkupWalker {
 
         stylesheet.listItem(attributes: &attributes, checkbox: listItem.checkbox?.bool)
 
+
+        var first = true
         for child in listItem.children {
+            if !first {
+                attributedString.append(NSAttributedString(string: "\n", attributes: attributes))
+            }
+            first = false
             visit(child)
         }
     }
