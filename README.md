@@ -1,6 +1,6 @@
 # AttributedString Builder
 
-A simple way to build up attributed strings using result builders from a variety of sources. Based on the episodes from [Swift Talk](https://talk.objc.io/episodes/S01E337-attributed-string-builder-part-1).
+A simple way to build up attributed strings using result builders from a variety of sources. Based on the episodes from [Swift Talk](https://talk.objc.io/episodes/S01E337-attributed-string-builder-part-1). Here are the things you can embed:
 
 - Plain strings
 - Markdown
@@ -82,3 +82,7 @@ You can use the environment in a way similar to SwiftUI's Environment to pass va
 
 - [Writing the Builder](https://talk.objc.io/episodes/S01E337-attributed-string-builder-part-1)
 - [Joining Elements](https://talk.objc.io/episodes/S01E338-attributed-string-builder-part-2)
+- [Syntax Highlighting](https://talk.objc.io/episodes/S01E339-attributed-string-builder-part-3)
+- [Rendering SwiftUI Views](https://talk.objc.io/episodes/S01E340-attributed-string-builder-part-4)
+- [Rendering Markdown](https://talk.objc.io/episodes/S01E341-attributed-string-builder-part-5)
+- [Creating a PDF](https://talk.objc.io/episodes/S01E342-attributed-string-builder-part-6)
