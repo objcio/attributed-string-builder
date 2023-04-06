@@ -35,27 +35,49 @@ public struct PageInfo {
     public var chapterTitle: String
 }
 
+extension NSAttributedString {
+//    public func pdf(size: CGSize = .a4, inset: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch)) -> Data {
+    public func fancyPDF(
+        pageSize: CGSize = .a4,
+        pageMargin: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch),
+        header: Accessory? = nil,
+        footer: Accessory? = nil,
+        annotationsPadding: NSEdgeInsets = .init()
+    ) -> Data {
+        let r = PDFRenderer(pageSize: pageSize,
+                            pageMargin: pageMargin,
+                            string: self,
+                            header: header,
+                            footer: footer,
+                            annotationsPadding: annotationsPadding)
+        return r.render()
+    }
+}
+
+public struct Accessory {
+    public var string: (PageInfo) -> NSAttributedString
+    public var padding: NSEdgeInsets
+
+    public init(string: @escaping (PageInfo) -> NSAttributedString, padding: NSEdgeInsets) {
+        self.string = string
+        self.padding = padding
+    }
+}
+
+public struct Annotation: Hashable {
+    public let characterRange: NSRange
+    public let string: NSAttributedString
+
+    public init(characterRange: NSRange, string: NSAttributedString) {
+        self.characterRange = characterRange
+        self.string = string
+    }
+}
+
+
 // From: https://stackoverflow.com/questions/58483933/create-pdf-with-multiple-pages
-public class PDFRenderer {
-    public struct Accessory {
-        public let string: (PageInfo) -> NSAttributedString
-        public let padding: NSEdgeInsets
+class PDFRenderer {
 
-        public init(string: @escaping (PageInfo) -> NSAttributedString, padding: NSEdgeInsets) {
-            self.string = string
-            self.padding = padding
-        }
-    }
-
-    public struct Annotation: Hashable {
-        public let characterRange: NSRange
-        public let string: NSAttributedString
-
-        public init(characterRange: NSRange, string: NSAttributedString) {
-            self.characterRange = characterRange
-            self.string = string
-        }
-    }
 
     private struct Page {
         let container: NSTextContainer
@@ -399,15 +421,15 @@ private extension NSAttributedString {
         return values
     }
 
-    func annotations(in range: NSRange? = nil) -> [PDFRenderer.Annotation] {
-        var annotations: [PDFRenderer.Annotation] = []
+    func annotations(in range: NSRange? = nil) -> [Annotation] {
+        var annotations: [Annotation] = []
         enumerateAttribute(.annotation, in: range ?? NSRange(location: 0, length: length)) { value, range, stop in
             guard let annotationString = value as? NSAttributedString else {
                 return
             }
 
             annotations.append(
-                PDFRenderer.Annotation(
+                Annotation(
                     characterRange: range,
                     string: annotationString
                 )
