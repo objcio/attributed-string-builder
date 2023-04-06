@@ -95,6 +95,7 @@ extension Stylesheet {
 
     public func codeBlock(attributes: inout Attributes) {
         attributes.family = "Monaco"
+        attributes.lineHeightMultiple = 1
     }
 
     public func heading(level: Int, attributes: inout Attributes) {
