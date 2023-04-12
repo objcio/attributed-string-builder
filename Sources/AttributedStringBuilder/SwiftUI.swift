@@ -2,13 +2,23 @@ import Cocoa
 import SwiftUI
 
 public struct Embed<V: View>: AttributedStringConvertible {
-    public init(proposal: ProposedViewSize = .unspecified, @ViewBuilder view: () -> V) {
+    public init(proposal: ProposedViewSize = .unspecified, scale: CGFloat = 0.5, @ViewBuilder view: () -> V) {
         self.proposal = proposal
         self.view = view()
+        self.scale = scale
     }
 
+    var scale: CGFloat
     var proposal: ProposedViewSize = .unspecified
     @ViewBuilder var view: V
+
+
+    @MainActor
+    public var size: CGSize {
+        let renderer = ImageRenderer(content: view)
+        renderer.proposedSize = proposal
+        return renderer.nsImage!.size
+    }
 
     @MainActor
     public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
@@ -30,7 +40,10 @@ public struct Embed<V: View>: AttributedStringConvertible {
             pdfContext.endPDFPage()
             pdfContext.closePDF()
         }
-        return NSImage(data: data as Data)!.attributedString(environment: environment)
+        var i = NSImage(data: data as Data)!
+        i.size.width *= scale
+        i.size.height *= scale
+        return i.attributedString(environment: environment)
     }
 }
 
