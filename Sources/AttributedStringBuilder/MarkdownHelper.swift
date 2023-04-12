@@ -216,7 +216,7 @@ extension Checkbox {
     }
 }
 
-fileprivate struct Markdown: AttributedStringConvertible {
+fileprivate struct MarkdownHelper: AttributedStringConvertible {
     var document: Document
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
@@ -228,7 +228,20 @@ fileprivate struct Markdown: AttributedStringConvertible {
     }
 }
 
-extension Markdown {
+public struct Markdown: AttributedStringConvertible {
+    public var source: String
+    public init(_ source: String) {
+        self.source = source
+    }
+
+    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+        await EnvironmentReader(\.markdownStylesheet) { stylesheet in
+            MarkdownHelper(string: source, stylesheet: stylesheet)
+        }.attributedString(environment: environment)
+    }
+}
+
+extension MarkdownHelper {
     init(string: String, stylesheet: any Stylesheet) {
         self.document = Document(parsing: string)
         self.stylesheet = stylesheet
@@ -236,14 +249,25 @@ extension Markdown {
     }
 }
 
+struct MarkdownStylesheetKey: EnvironmentKey {
+    static var defaultValue: any Stylesheet = .default
+}
+
+extension EnvironmentValues {
+    public var markdownStylesheet: any Stylesheet {
+        get { self[MarkdownStylesheetKey.self] }
+        set { self[MarkdownStylesheetKey.self] = newValue }
+    }
+}
+
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default) -> some AttributedStringConvertible {
-        Markdown(string: self, stylesheet: stylesheet)
+        MarkdownHelper(string: self, stylesheet: stylesheet)
     }
 }
 
 extension Document {
     public func markdown(stylesheet: any Stylesheet = .default, makeCheckboxURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
-        Markdown(document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        MarkdownHelper(document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
     }
 }

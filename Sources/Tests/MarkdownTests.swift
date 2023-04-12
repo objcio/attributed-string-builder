@@ -33,14 +33,14 @@ class MarkdownTests: XCTestCase {
     }
 
     func testIndentedList() async {
-        let markdown = """
+        let markdown = Markdown("""
         - One
         - Two
           - Three
           - Four
         - Five
-        """
-        let attrStr = await markdown.markdown().run(environment: .init())
+        """)
+        let attrStr = await markdown.run(environment: .init())
         let expectation = """
         \t•\tOne
         \t•\tTwo
