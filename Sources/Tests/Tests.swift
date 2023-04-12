@@ -46,6 +46,19 @@ var example: some AttributedStringConvertible {
         ])
     ])
     .modify { $0.size = 10 }
+
+    String(UnicodeScalar(12)) // pagebreak
+
+    Table(rows: [
+        .init(cells: [
+            .init(contents: "Here is the first cell\nwith a newline"),
+            .init(contents: "And the second cell"),
+        ]),
+        .init(cells: [
+            .init(contents: "Third"),
+            .init(contents: "And fourth"),
+        ])
+    ])
     
 //    NSImage(systemSymbolName: "hand.wave", accessibilityDescription: nil)!
     Embed {

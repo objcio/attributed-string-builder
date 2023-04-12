@@ -88,7 +88,6 @@ public struct TableCell {
         paragraph.textBlocks = [block]
 
         let contentsA = await NSMutableAttributedString(attributedString: contents.joined().run(environment: environment))
-        assert(!contentsA.string.contains(where: { $0.isNewline }), "Not supported")
 
         // Copy some style attributes from the cell contents if possible
         if let style = contentsA.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {
