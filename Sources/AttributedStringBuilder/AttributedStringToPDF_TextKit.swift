@@ -84,6 +84,7 @@ class PDFRenderer {
         let annotations: AccessoryInfo?
         let header: AccessoryInfo?
         let footer: AccessoryInfo?
+        let frameRect: CGRect
     }
 
     private struct AccessoryInfo {
@@ -112,7 +113,6 @@ class PDFRenderer {
     private var annotationsPadding: NSEdgeInsets
 
     private var pageRect: CGRect
-    private var frameRect: CGRect
 
     private var bookLayoutManager: NSLayoutManager
     private var bookTextStorage: NSTextStorage
@@ -136,7 +136,6 @@ class PDFRenderer {
         self.footer = footer
         self.annotationsPadding = annotationsPadding
         self.pageRect = CGRect(origin: .zero, size: pageSize)
-        self.frameRect = pageRect.insetBy(dx: pageMargin.width * 2, dy: pageMargin.height * 2)
 
         self.bookTextStorage = NSTextStorage(attributedString: string)
         self.bookLayoutManager = NSLayoutManager()
@@ -181,6 +180,17 @@ class PDFRenderer {
         }
 
         while addMode() {
+
+            func computeFrameRect(margins: NSEdgeInsets) -> CGRect {
+                var copy = pageRect
+                copy.origin.x += margins.left
+                copy.size.width -= margins.left + margins.right
+                copy.origin.y += margins.top
+                copy.size.height -= margins.top + margins.bottom
+                return copy
+            }
+
+            var frameRect = computeFrameRect(margins: NSEdgeInsets(top: pageMargin.height, left: pageMargin.width, bottom: pageMargin.height, right: pageMargin.width))
 
             func accessoryInfo(accessory: Accessory?) -> AccessoryInfo {
                 let storage = NSTextStorage(attributedString: accessory?.string(.init(pageNumber: pages.count + 1, chapterTitle: chapterTitle ?? "")) ?? NSAttributedString())
@@ -236,6 +246,11 @@ class PDFRenderer {
 
             let pageCharacterRange = pageLayoutManager.characterRange(forGlyphRange: pageLayoutManager.glyphRange(for: pageContentContainer), actualGlyphRange: nil)
 
+            if let customMargins = bookTextStorage.values(type: NSEdgeInsets.self, for: .pageMargin, in: pageCharacterRange).first {
+                frameRect = computeFrameRect(margins: customMargins.value)
+                pageContentContainer.containerSize = frameRect.size
+            }
+
             let headings = bookTextStorage.values(type: HeadingInfo.self, for: .heading, in: pageCharacterRange)
             if let info = headings.first(where: { $0.value.level == 1 }) {
                 chapterTitle = info.value.text
@@ -276,7 +291,8 @@ class PDFRenderer {
                     container: pageContentContainer,
                     annotations: annotationsInfo,
                     header: pageHeaderInfo,
-                    footer: pageFooterInfo
+                    footer: pageFooterInfo,
+                    frameRect: frameRect
                 )
             )
         }
@@ -315,7 +331,7 @@ class PDFRenderer {
 
             // Draw header and content top bottom
             do {
-                var origin = frameRect.origin
+                var origin = page.frameRect.origin
 
                 // Draw header
                 if let header = self.header, let headerInfoContainers = page.header?.containers {
