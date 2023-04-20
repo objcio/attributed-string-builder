@@ -1,4 +1,5 @@
 import Cocoa
+import SwiftUI
 
 /*
  
@@ -7,8 +8,6 @@ import Cocoa
  the algo is "greedy" approach: procees pages from the beginning to end of the book and create/update page sizes based on what's found on current page. First, set page footer and header, then add annotations if any. Page header/footer is static size, but annotations area size is dynamic. For each page try to layout all three headers sections + text body section. If the number of annotations (for the current page) before and after adding annotations/headers is different, that means header/footers caused cut the page earlier → text with annotation will be now on the following (next) page → update annotations footer for the current page while keep the text body size. Then proceed to next page. It works because we process page by page while adjusting the page "end index".
 
  */
-
-import Cocoa
 
 struct MyHeading {
     var pageNumber: Int
@@ -37,6 +36,7 @@ public struct PageInfo {
 
 extension NSAttributedString {
 //    public func pdf(size: CGSize = .a4, inset: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch)) -> Data {
+    @MainActor
     public func fancyPDF(
         pageSize: CGSize = .a4,
         pageMargin: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch),
@@ -76,6 +76,7 @@ public struct Annotation: Hashable {
 
 
 // From: https://stackoverflow.com/questions/58483933/create-pdf-with-multiple-pages
+@MainActor
 class PDFRenderer {
 
 
@@ -327,6 +328,19 @@ class PDFRenderer {
                 context.setFillColor(pageBackground.cgColor)
                 context.fill(pageRect)
                 context.restoreGState()
+            }
+
+            if let backgroundView = attributes[.backgroundView] as? AnyView {
+                let renderer = ImageRenderer(content: backgroundView)
+                renderer.proposedSize = ProposedViewSize(pageRect.size)
+                context.concatenate(.init(scaleX: 1, y: -1))
+                context.translateBy(x: 0, y: -pageRect.height)
+                renderer.render { size, renderer in
+                    renderer(context)
+                }
+                // This manually restores the context, because saveGState/restoreGState didn't work here
+                context.translateBy(x: 0, y: pageRect.height)
+                context.concatenate(.init(scaleX: 1, y: -1))
             }
 
             // Draw header and content top bottom
