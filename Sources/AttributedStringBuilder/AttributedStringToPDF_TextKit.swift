@@ -171,6 +171,7 @@ class PDFRenderer {
         _resetLayoutManager()
 
         var pages: [Page] = []
+        var chapterTitle: String?
 
         // return true until containers consume all glyphs
         func addMode() -> Bool {
@@ -182,7 +183,7 @@ class PDFRenderer {
         while addMode() {
 
             func accessoryInfo(accessory: Accessory?) -> AccessoryInfo {
-                let storage = NSTextStorage(attributedString: accessory?.string(.init(pageNumber: 0, chapterTitle: "Test")) ?? NSAttributedString())
+                let storage = NSTextStorage(attributedString: accessory?.string(.init(pageNumber: pages.count + 1, chapterTitle: chapterTitle ?? "")) ?? NSAttributedString())
                 let layoutManager = NSLayoutManager()
                 layoutManager.usesFontLeading = bookLayoutManager.usesFontLeading
                 layoutManager.allowsNonContiguousLayout = bookLayoutManager.allowsNonContiguousLayout
@@ -233,7 +234,14 @@ class PDFRenderer {
             bookLayoutManager.addTextContainer(pageContentContainer)
             let pageLayoutManager = pageContentContainer.layoutManager!
 
-            let pageAnnotationsBefore = bookTextStorage.annotations(in: pageLayoutManager.characterRange(forGlyphRange: pageLayoutManager.glyphRange(for: pageContentContainer), actualGlyphRange: nil))
+            let pageCharacterRange = pageLayoutManager.characterRange(forGlyphRange: pageLayoutManager.glyphRange(for: pageContentContainer), actualGlyphRange: nil)
+
+            let headings = bookTextStorage.values(type: HeadingInfo.self, for: .heading, in: pageCharacterRange)
+            if let info = headings.first(where: { $0.value.level == 1 }) {
+                chapterTitle = info.value.text
+            }
+
+            let pageAnnotationsBefore = bookTextStorage.annotations(in: pageCharacterRange)
 
             // Add header container
             let pageHeaderInfo = accessoryInfo(accessory: header)
@@ -258,6 +266,9 @@ class PDFRenderer {
             if pageAnnotationsAfter.count != pageAnnotationsBefore.count {
                 annotationsInfo = annotationsAccessoryInfo(pageContentContainer: pageContentContainer)
                 pageFooterInfo = accessoryInfo(accessory: footer)
+                if pageAnnotationsAfter.count != pageAnnotationsBefore.count {
+                    fatalError("Annotations have changed again, should be a while loop?")
+                }
             }
 
             pages.append(
