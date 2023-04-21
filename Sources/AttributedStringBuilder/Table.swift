@@ -29,6 +29,7 @@ public struct Table: AttributedStringConvertible {
             assert(row.cells.count == table.numberOfColumns)
             await row.render(row: rowIx, table: table, environment: environment, result: result)
         }
+        result.replaceCharacters(in: NSRange(location: result.length-1, length: 1), with: "")
         return [result]
     }
 }
@@ -57,11 +58,13 @@ public struct TableCell {
         borderColor: NSColor = .black,
         borderWidth: WidthValue = 0,
         padding: WidthValue = 0,
+        margin: WidthValue = 0,
         alignment: NSTextAlignment = .left,
         contents: AttributedStringConvertible) {
         self.borderColor = borderColor
         self.borderWidth = borderWidth
         self.padding = padding
+        self.margin = margin
         self.contents = contents
         self.width = width
         self.alignment = alignment
@@ -70,6 +73,7 @@ public struct TableCell {
     public var borderColor: NSColor = .black
     public var borderWidth: WidthValue = 0
     public var padding: WidthValue = 0
+    public var margin: WidthValue = 0
     public var contents: AttributedStringConvertible
     public var width: Table.Width?
     public var alignment: NSTextAlignment = .left
@@ -81,6 +85,9 @@ public struct TableCell {
         }
         for (edge, value) in padding.allEdges {
             block.setWidth(value.value, type: value.type, for: .padding, edge: edge)
+        }
+        for (edge, value) in margin.allEdges {
+            block.setWidth(value.value, type: value.type, for: .margin, edge: edge)
         }
 
         let paragraph = NSMutableParagraphStyle()
