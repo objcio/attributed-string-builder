@@ -17,6 +17,7 @@ public protocol Stylesheet {
     func link(attributes: inout Attributes)
     func heading(level: Int, attributes: inout Attributes)
     func listItem(attributes: inout Attributes, checkbox: Bool?)
+    func list(attributes: inout Attributes)
     func orderedListItemPrefix(number: Int) -> String
     func orderedListItemPrefix(attributes: inout Attributes)
     var unorderedListItemPrefix: String { get }
@@ -51,6 +52,9 @@ extension Stylesheet {
         if checkbox == true {
             attributes.textColor = .secondaryLabelColor
         }
+    }
+
+    public func list(attributes: inout Attributes) {
     }
 
     public func orderedListItemPrefix(number: Int) -> String {

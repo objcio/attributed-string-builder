@@ -120,12 +120,11 @@ struct AttributedStringWalker: MarkupWalker {
         let original = attributes
         defer { attributes = original }
 
+        stylesheet.list(attributes: &attributes)
+
         let isOrdered = list is OrderedList
 
-        attributes.tabStops[0] = NSTextTab(textAlignment: .right, location: attributes.tabStops[0].location)
-        attributes.tabStops[1] = NSTextTab(textAlignment: .left, location: attributes.tabStops[0].location + 10)
         attributes.headIndent += attributes.tabStops[1].location
-        attributes.paragraphSpacing = 0 // Remove spacing between list items
 
         for (item, number) in zip(list.listItems, 1...) {
             // Append list item prefix
@@ -176,7 +175,6 @@ struct AttributedStringWalker: MarkupWalker {
         defer { attributes = original }
 
         stylesheet.listItem(attributes: &attributes, checkbox: listItem.checkbox?.bool)
-
 
         var first = true
         for child in listItem.children {
