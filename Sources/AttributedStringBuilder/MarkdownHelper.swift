@@ -103,6 +103,7 @@ struct AttributedStringWalker: MarkupWalker {
         let original = attributes
         defer { attributes = original }
         stylesheet.heading(level: heading.level, attributes: &attributes)
+        attributes.heading(title: heading.plainText, level: heading.level)
         for child in heading.children {
             visit(child)
         }

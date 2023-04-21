@@ -15,3 +15,9 @@ public struct HeadingInfo: Codable, Hashable {
     public var text: String
     public var level: Int
 }
+
+extension Attributes {
+    mutating func heading(title: String, level: Int) {
+        customAttributes[NSAttributedString.Key.heading.rawValue] = HeadingInfo(text: title, level: level)
+    }
+}

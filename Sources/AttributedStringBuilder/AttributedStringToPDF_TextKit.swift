@@ -9,11 +9,11 @@ import SwiftUI
 
  */
 
-struct MyHeading {
-    var pageNumber: Int
-    var title: String
-    var level: Int
-    var bounds: CGRect
+public struct MyHeading {
+    public var pageNumber: Int
+    public var title: String
+    public var level: Int
+    public var bounds: CGRect
 }
 
 struct NamedPart {
@@ -34,6 +34,11 @@ public struct PageInfo {
     public var chapterTitle: String
 }
 
+public struct PDFResult {
+    public var data: Data
+    public var headings: [MyHeading]
+}
+
 extension NSAttributedString {
 //    public func pdf(size: CGSize = .a4, inset: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch)) -> Data {
     @MainActor
@@ -43,14 +48,16 @@ extension NSAttributedString {
         header: Accessory? = nil,
         footer: Accessory? = nil,
         annotationsPadding: NSEdgeInsets = .init()
-    ) -> Data {
+    ) -> PDFResult {
         let r = PDFRenderer(pageSize: pageSize,
                             pageMargin: pageMargin,
                             string: self,
                             header: header,
                             footer: footer,
                             annotationsPadding: annotationsPadding)
-        return r.render()
+
+        let data = r.render()
+        return PDFResult(data: data, headings: r.headings)
     }
 }
 

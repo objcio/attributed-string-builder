@@ -4,7 +4,17 @@ public protocol AttributedStringConvertible {
     func attributedString(environment: EnvironmentValues) async -> [NSAttributedString]
 }
 
+public struct Group<Content>: AttributedStringConvertible where Content: AttributedStringConvertible {
+    var content: Content
 
+    public init(@AttributedStringBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+        await content.attributedString(environment: environment)
+    }
+}
 
 extension String: AttributedStringConvertible {
     public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
@@ -33,5 +43,3 @@ extension Array: AttributedStringConvertible where Element == AttributedStringCo
         return result
     }
 }
-
-
