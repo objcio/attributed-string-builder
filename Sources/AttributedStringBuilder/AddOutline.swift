@@ -59,7 +59,7 @@ extension PDFDocument {
     }
 
 
-    func addOutline(headings: [MyHeading]) {
+    public func addOutline(headings: [MyHeading]) {
         let child = PDFOutline()
         child.label = "Child"
 
