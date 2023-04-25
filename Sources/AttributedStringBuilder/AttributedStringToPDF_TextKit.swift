@@ -49,14 +49,17 @@ extension NSAttributedString {
         pageMargin: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch),
         header: Accessory? = nil,
         footer: Accessory? = nil,
-        annotationsPadding: NSEdgeInsets = .init()
+        annotationsPadding: NSEdgeInsets = .init(),
+        highlightWarnings: Bool
     ) -> PDFResult {
         let r = PDFRenderer(pageSize: pageSize,
                             pageMargin: pageMargin,
                             string: self,
                             header: header,
                             footer: footer,
-                            annotationsPadding: annotationsPadding)
+                            annotationsPadding: annotationsPadding,
+                            highlightWarnings: highlightWarnings
+        )
 
         let data = r.render()
         return PDFResult(data: data, headings: r.headings, namedParts: r.namedParts, links: r.links)
@@ -121,6 +124,7 @@ class PDFRenderer {
     private var header: Accessory?
     private var footer: Accessory?
     private var annotationsPadding: NSEdgeInsets
+    private var highlightWarnings: Bool
 
     private var pageRect: CGRect
 
@@ -138,7 +142,8 @@ class PDFRenderer {
         string: NSAttributedString,
         header: Accessory? = nil,
         footer: Accessory? = nil,
-        annotationsPadding: NSEdgeInsets = .init()
+        annotationsPadding: NSEdgeInsets = .init(),
+        highlightWarnings: Bool = false
     ) {
         self.pageSize = pageSize
         self.pageMargin = pageMargin
@@ -146,6 +151,7 @@ class PDFRenderer {
         self.footer = footer
         self.annotationsPadding = annotationsPadding
         self.pageRect = CGRect(origin: .zero, size: pageSize)
+        self.highlightWarnings = highlightWarnings
 
         self.bookTextStorage = NSTextStorage(attributedString: string)
         self.bookLayoutManager = NSLayoutManager()
@@ -254,7 +260,8 @@ class PDFRenderer {
             bookLayoutManager.addTextContainer(pageContentContainer)
             let pageLayoutManager = pageContentContainer.layoutManager!
 
-            let pageCharacterRange = pageLayoutManager.characterRange(forGlyphRange: pageLayoutManager.glyphRange(for: pageContentContainer), actualGlyphRange: nil)
+            let pageGlyphRange = pageLayoutManager.glyphRange(for: pageContentContainer)
+            let pageCharacterRange = pageLayoutManager.characterRange(forGlyphRange: pageGlyphRange, actualGlyphRange: nil)
 
             if let customMargins = bookTextStorage.values(type: NSEdgeInsets.self, for: .pageMargin, in: pageCharacterRange).first {
                 frameRect = computeFrameRect(margins: customMargins.value)
@@ -310,6 +317,22 @@ class PDFRenderer {
         self.pages = pages
     }
 
+    private func addWidowAndOrphanWarnings() {
+        let range = bookTextStorage.string.startIndex..<bookTextStorage.string.endIndex
+        bookTextStorage.string.enumerateSubstrings(in: range, options: .byParagraphs) { [unowned self] substring, substringRange, enclosingRange, stop in
+            let nsRange = NSRange(substringRange, in: bookTextStorage.string)
+            let pageRanges = bookLayoutManager.glyphPageRanges(for: nsRange)
+            guard pageRanges.count > 1 else { return }
+
+            for range in [pageRanges.first!, pageRanges.last!] {
+                if bookLayoutManager.lineFragmentRects(for: range).count == 1 {
+                    let charRange = bookLayoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
+                    bookTextStorage.addAttribute(.backgroundColor, value: NSColor.yellow, range: charRange)
+                }
+            }
+        }
+    }
+
     private func _render(context: CGContext) {
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
@@ -319,6 +342,9 @@ class PDFRenderer {
         }
 
         _layoutPages()
+        if highlightWarnings {
+            addWidowAndOrphanWarnings()
+        }
 
         // Print containers
         for (pageNo, page) in pages.enumerated() {
@@ -362,8 +388,6 @@ class PDFRenderer {
                     origin = _draw(containers: headerInfoContainers, startAt: origin)
                     origin.y -= header.padding.top
                 }
-
-                let pageTop = origin.y
 
                 // Draw content
                 bookLayoutManager.drawBackground(forGlyphRange: range, at: origin)
