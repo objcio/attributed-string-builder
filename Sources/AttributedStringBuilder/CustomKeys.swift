@@ -7,6 +7,7 @@ extension NSAttributedString.Key {
     static public let annotation = NSAttributedString.Key("48611742167f11ed861d0242ac120002")
     static public let pageMargin = NSAttributedString.Key("io.objc.pageMargin")
     static public let backgroundView = NSAttributedString.Key("io.objc.backgroundView")
+    static public let spreadBreak = NSAttributedString.Key("io.objc.spreadBreak")
 }
 
 extension Attributes {
@@ -34,6 +35,15 @@ extension Attributes {
         }
         set {
             customAttributes[NSAttributedString.Key.backgroundView.rawValue] = newValue
+        }
+    }
+
+    public var spreadBreak: Bool {
+        get {
+            (customAttributes[NSAttributedString.Key.spreadBreak.rawValue] as? Bool) ?? false
+        }
+        set {
+            customAttributes[NSAttributedString.Key.spreadBreak.rawValue] = newValue
         }
     }
 }

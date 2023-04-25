@@ -46,7 +46,7 @@ extension NSAttributedString {
     @MainActor
     public func fancyPDF(
         pageSize: CGSize = .a4,
-        pageMargin: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch),
+        pageMargin: @escaping (_ pageNumber: Int) -> NSEdgeInsets = { _ in NSEdgeInsets(top: .pointsPerInch/2, left: .pointsPerInch/2, bottom: .pointsPerInch/2, right: .pointsPerInch/2)},
         header: Accessory? = nil,
         footer: Accessory? = nil,
         annotationsPadding: NSEdgeInsets = .init(),
@@ -93,7 +93,7 @@ class PDFRenderer {
 
 
     private struct Page {
-        let container: NSTextContainer
+        let container: NSTextContainer? // nil is an empty page
         let annotations: AccessoryInfo?
         let header: AccessoryInfo?
         let footer: AccessoryInfo?
@@ -120,7 +120,7 @@ class PDFRenderer {
     }
 
     private var pageSize: CGSize
-    private var pageMargin: CGSize
+    private var pageMargin: (_ pageNumber: Int) -> NSEdgeInsets
     private var header: Accessory?
     private var footer: Accessory?
     private var annotationsPadding: NSEdgeInsets
@@ -138,7 +138,7 @@ class PDFRenderer {
 
     public init(
         pageSize: CGSize,
-        pageMargin: CGSize,
+        pageMargin: @escaping (_ pageNumber: Int) -> NSEdgeInsets,
         string: NSAttributedString,
         header: Accessory? = nil,
         footer: Accessory? = nil,
@@ -190,8 +190,8 @@ class PDFRenderer {
 
         // return true until containers consume all glyphs
         func addMode() -> Bool {
-            guard let lastPage = pages.last else { return true }
-            let containerGlyphRange = bookLayoutManager.glyphRange(for: lastPage.container)
+            guard let lastPage = pages.last(where: { $0.container != nil }) else { return true }
+            let containerGlyphRange = bookLayoutManager.glyphRange(for: lastPage.container!)
             return NSMaxRange(containerGlyphRange) < bookLayoutManager.numberOfGlyphs
         }
 
@@ -206,7 +206,9 @@ class PDFRenderer {
                 return copy
             }
 
-            var frameRect = computeFrameRect(margins: NSEdgeInsets(top: pageMargin.height, left: pageMargin.width, bottom: pageMargin.height, right: pageMargin.width))
+            let margins = pageMargin(pages.count)
+            var frameRect = computeFrameRect(margins: margins)
+
 
             func accessoryInfo(accessory: Accessory?) -> AccessoryInfo {
                 let storage = NSTextStorage(attributedString: accessory?.string(.init(pageNumber: pages.count + 1, chapterTitle: chapterTitle ?? "")) ?? NSAttributedString())
@@ -262,6 +264,12 @@ class PDFRenderer {
 
             let pageGlyphRange = pageLayoutManager.glyphRange(for: pageContentContainer)
             let pageCharacterRange = pageLayoutManager.characterRange(forGlyphRange: pageGlyphRange, actualGlyphRange: nil)
+
+            let spreadBreak = bookTextStorage.values(type: Bool.self, for: .spreadBreak, in: pageCharacterRange).first?.value ?? false
+            print(spreadBreak, pages.count)
+            if spreadBreak && pages.count.isMultiple(of: 2) {
+                pages.append(Page(container: nil, annotations: nil, header: nil, footer: nil, frameRect: frameRect))
+            }
 
             if let customMargins = bookTextStorage.values(type: NSEdgeInsets.self, for: .pageMargin, in: pageCharacterRange).first {
                 frameRect = computeFrameRect(margins: customMargins.value)
@@ -352,10 +360,12 @@ class PDFRenderer {
             context.beginPage(mediaBox: &x)
             defer { context.endPage() }
 
+            guard let container = page.container else { continue } // empty page
+
             context.translateBy(x: 0, y: pageRect.height)
             context.concatenate(.init(scaleX: 1, y: -1))
 
-            let range = bookLayoutManager.glyphRange(for: page.container)
+            let range = bookLayoutManager.glyphRange(for: container)
             let location = range.location + range.length/2
             let attributes = bookTextStorage.attributes(at: location, effectiveRange: nil)
             if let pageBackground = attributes[.pageBackground] as? NSColor {
@@ -392,11 +402,11 @@ class PDFRenderer {
                 // Draw content
                 bookLayoutManager.drawBackground(forGlyphRange: range, at: origin)
                 bookLayoutManager.drawGlyphs(forGlyphRange: range, at: origin)
-                origin.y += page.container.size.height
+                origin.y += container.size.height
 
                 // Compute the local position within the page for the range
                 func computeBounds(range: NSRange) -> CGRect {
-                    var rect = bookLayoutManager.boundingRect(forGlyphRange: range, in: page.container)
+                    var rect = bookLayoutManager.boundingRect(forGlyphRange: range, in: container)
                     rect.origin.y += page.frameRect.minY
                     rect.origin.x += page.frameRect.minX
                     rect.origin.y = pageRect.height - rect.origin.y - rect.height
