@@ -74,7 +74,7 @@ extension PDFDocument {
         self.outlineRoot = root
     }
 
-    func addLinks(namedParts: [NamedPart], links: [MyLink]) {
+    public func addLinks(namedParts: [NamedPart], links: [MyLink]) {
         for l in links {
             guard let dest = namedParts.first(where: { $0.name == l.name }) else {
                 fatalError("No destination named: \(l.name)")

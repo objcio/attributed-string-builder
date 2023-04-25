@@ -16,16 +16,16 @@ public struct MyHeading {
     public var bounds: CGRect
 }
 
-struct NamedPart {
-    var pageNumber: Int
-    var name: String
-    var bounds: CGRect
+public struct NamedPart {
+    public var pageNumber: Int
+    public var name: String
+    public var bounds: CGRect
 }
 
-struct MyLink {
-    var pageNumber: Int
-    var name: String
-    var bounds: CGRect
+public struct MyLink {
+    public var pageNumber: Int
+    public var name: String
+    public var bounds: CGRect
 }
 
 
@@ -37,6 +37,8 @@ public struct PageInfo {
 public struct PDFResult {
     public var data: Data
     public var headings: [MyHeading]
+    public var namedParts: [NamedPart]
+    public var links: [MyLink]
 }
 
 extension NSAttributedString {
@@ -57,7 +59,7 @@ extension NSAttributedString {
                             annotationsPadding: annotationsPadding)
 
         let data = r.render()
-        return PDFResult(data: data, headings: r.headings)
+        return PDFResult(data: data, headings: r.headings, namedParts: r.namedParts, links: r.links)
     }
 }
 
@@ -369,11 +371,11 @@ class PDFRenderer {
                 origin.y += page.container.size.height
 
                 // Compute the local position within the page for the range
-                // TODO: this isn't 100% correct yet
                 func computeBounds(range: NSRange) -> CGRect {
                     var rect = bookLayoutManager.boundingRect(forGlyphRange: range, in: page.container)
-                    rect.origin.y = pageTop + (page.container.size.height-rect.origin.y+rect.height) // flip coordinates
-                    rect.origin.x += origin.x
+                    rect.origin.y += page.frameRect.minY
+                    rect.origin.x += page.frameRect.minX
+                    rect.origin.y = pageRect.height - rect.origin.y - rect.height
                     return rect
                 }
 
