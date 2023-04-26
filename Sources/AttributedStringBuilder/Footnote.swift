@@ -11,7 +11,7 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
         let _ = print("TODO footnote support")
 //        environment.footnoteCounter += 1
 //        let counter = environment.footnoteCounter
-        let counter = "1" // todo
+        let counter = "1"
         let stylesheet = context.environment.markdownStylesheet
         let annotation = Joined(separator: " ") {
             "\(counter)\t"

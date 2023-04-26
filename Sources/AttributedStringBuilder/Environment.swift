@@ -7,15 +7,21 @@ public struct StateValues {
     var userDefined: [ObjectIdentifier:Any] = [:]
 
     // todo rename environmentkey to statekey
-    public subscript<Key: EnvironmentKey>(key: Key.Type = Key.self) -> Key.Value {
+    public subscript<Key: StateKey>(key: Key.Type = Key.self) -> Key.Value {
         get {
-            userDefined[ObjectIdentifier(key)] as? Key.Value ?? Key.defaultValue
+            userDefined[ObjectIdentifier(key)] as? Key.Value ?? Key.initialValue
         }
         set {
             userDefined[ObjectIdentifier(key)] = newValue
         }
     }
 }
+
+public protocol StateKey {
+    associatedtype Value
+    static var initialValue: Value { get }
+}
+
 public struct EnvironmentValues {
     public init(attributes: Attributes = Attributes()) {
         self.attributes = attributes
