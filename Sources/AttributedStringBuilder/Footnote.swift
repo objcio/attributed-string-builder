@@ -1,5 +1,16 @@
 import Foundation
 
+struct FootnoteCounter: StateKey {
+    static var initialValue = 1
+}
+
+extension StateValues {
+    var footnoteCounter: Int {
+        get { self[FootnoteCounter.self] }
+        set { self[FootnoteCounter.self] = newValue }
+    }
+}
+
 public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringConvertible {
     public init(@AttributedStringBuilder contents: () -> Contents) {
         self.contents = contents()
@@ -8,10 +19,10 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
     var contents: Contents
 
     public func attributedString(context: inout Context) -> [NSAttributedString] {
-        let _ = print("TODO footnote support")
+        defer { context.state.footnoteCounter += 1 }
 //        environment.footnoteCounter += 1
 //        let counter = environment.footnoteCounter
-        let counter = "1"
+        let counter = "\(context.state.footnoteCounter)"
         let stylesheet = context.environment.markdownStylesheet
         let annotation = Joined(separator: " ") {
             "\(counter)\t"
@@ -22,20 +33,15 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
             $0.headIndent = $0.tabStops[0].location
         }
         .joined()
+        let c = context
         let result = "\(counter)"
             .superscript()
-//            .modify { attrs in
-//                var copy = attrs
-//                stylesheet.footnote(attributes: &copy)
-//                copy.annotation = annotation
-//            }
-//            .attributedString(&environment)
+            .modify { attrs in
+                var copiedContext = c
+                var copy = attrs
+                stylesheet.footnote(attributes: &copy)
+                copy.annotation = annotation.run(context: &copiedContext)
+            }
         return result.attributedString(context: &context)
     }
 }
-
-//extension String {
-//    public func footnote(@AttributedStringBuilder contents: () -> ToAttributedString) -> some ToAttributedString {
-//        Footnote(title: self, contents: contents())
-//    }
-//}
