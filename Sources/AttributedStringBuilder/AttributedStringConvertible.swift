@@ -1,7 +1,8 @@
 import Foundation
 
 public protocol AttributedStringConvertible {
-    func attributedString(environment: EnvironmentValues) async -> [NSAttributedString]
+    @MainActor
+    func attributedString(environment: EnvironmentValues) -> [NSAttributedString]
 }
 
 public struct Group<Content>: AttributedStringConvertible where Content: AttributedStringConvertible {
@@ -11,8 +12,9 @@ public struct Group<Content>: AttributedStringConvertible where Content: Attribu
         self.content = content()
     }
 
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
-        await content.attributedString(environment: environment)
+    @MainActor
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
+        content.attributedString(environment: environment)
     }
 }
 
@@ -35,10 +37,12 @@ extension NSAttributedString: AttributedStringConvertible {
 }
 
 extension Array: AttributedStringConvertible where Element == AttributedStringConvertible {
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+
+    @MainActor
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         var result: [NSAttributedString] = []
         for el in self {
-            result.append(contentsOf: await el.attributedString(environment: environment))
+            result.append(contentsOf: el.attributedString(environment: environment))
         }
         return result
     }

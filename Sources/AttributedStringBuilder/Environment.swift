@@ -25,16 +25,16 @@ public protocol EnvironmentKey {
 }
 
 public struct EnvironmentReader<Part, Content>: AttributedStringConvertible where Content: AttributedStringConvertible {
-    public init(_ keyPath: KeyPath<EnvironmentValues, Part>, @AttributedStringBuilder content: @escaping (Part) async -> Content) {
+    public init(_ keyPath: KeyPath<EnvironmentValues, Part>, @AttributedStringBuilder content: @escaping (Part) -> Content) {
         self.keyPath = keyPath
         self.content = content
     }
 
     var keyPath: KeyPath<EnvironmentValues, Part>
-    var content: (Part) async -> Content
+    var content: (Part) -> Content
 
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
-        await content(environment[keyPath: keyPath]).attributedString(environment: environment)
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
+        content(environment[keyPath: keyPath]).attributedString(environment: environment)
     }
 }
 
@@ -43,10 +43,10 @@ fileprivate struct EnvironmentModifier<Part, Content>: AttributedStringConvertib
     var modify: (inout Part) -> ()
     var content: Content
 
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         var copy = environment
         modify(&copy[keyPath: keyPath])
-        return await content.attributedString(environment: copy)
+        return content.attributedString(environment: copy)
     }
 }
 

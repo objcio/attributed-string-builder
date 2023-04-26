@@ -4,10 +4,10 @@ struct Modify: AttributedStringConvertible {
     var modify: (inout Attributes) -> ()
     var contents: AttributedStringConvertible
 
-    func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+    func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         var copy = environment
         modify(&copy.attributes)
-        return await contents.attributedString(environment: copy)
+        return contents.attributedString(environment: copy)
     }
 }
 

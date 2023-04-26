@@ -13,8 +13,9 @@ struct AttributedStringBuilder {
 }
 
 extension AttributedStringConvertible {
-    public func run(environment: EnvironmentValues) async -> NSAttributedString {
-        await Joined(separator: "", content: {
+    @MainActor
+    public func run(environment: EnvironmentValues) -> NSAttributedString {
+        Joined(separator: "", content: {
                 self
             }).single(environment: environment)       
     }

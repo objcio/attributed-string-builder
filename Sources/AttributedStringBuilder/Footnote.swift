@@ -7,7 +7,7 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
 
     var contents: Contents
 
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         let _ = print("TODO footnote support")
 //        environment.footnoteCounter += 1
 //        let counter = environment.footnoteCounter
@@ -30,7 +30,7 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
 //                copy.annotation = annotation
 //            }
 //            .attributedString(&environment)
-        return await result.attributedString(environment: environment)
+        return result.attributedString(environment: environment)
     }
 }
 

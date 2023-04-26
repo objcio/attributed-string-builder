@@ -10,11 +10,11 @@ extension Stylesheet where Self == DefaultStylesheet {
 }
 
 struct HighlightCode: EnvironmentKey {
-    static var defaultValue: ((Code) -> NSAttributedString)? = nil
+    static var defaultValue: ((Code) -> any AttributedStringConvertible)? = nil
 }
 
 extension EnvironmentValues {
-    public var highlightCode: ((Code) -> NSAttributedString)? {
+    public var highlightCode: ((Code) -> any AttributedStringConvertible)? {
         get {
             self[HighlightCode.self]
         }
@@ -34,11 +34,16 @@ public struct Code: Hashable, Codable {
     public var code: String
 }
 
+@MainActor(unsafe)
 struct AttributedStringWalker: MarkupWalker {
+    var environment: EnvironmentValues
     var attributes: Attributes
     let stylesheet: Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
-    var highlightCode: ((Code) -> NSAttributedString)?
+
+    var highlightCode: ((Code) -> any AttributedStringConvertible)? {
+        environment.highlightCode
+    }
 
     var attributedString = NSMutableAttributedString()
 
@@ -73,8 +78,10 @@ struct AttributedStringWalker: MarkupWalker {
         var attributes = attributes
         let code = codeBlock.code.trimmingCharacters(in: .whitespacesAndNewlines)
         if let h = highlightCode {
-            let result = h(Code(language: codeBlock.language, code: codeBlock.code))
-            attributedString.append(result)
+            let result = h(Code(language: codeBlock.language, code: codeBlock.code)).attributedString(environment: environment)
+            for r in result {
+                attributedString.append(r)
+            }
         } else {
             stylesheet.codeBlock(attributes: &attributes)
             attributedString.append(NSAttributedString(string: code, attributes: attributes))
@@ -251,10 +258,9 @@ fileprivate struct MarkdownHelper: AttributedStringConvertible {
     var document: Document
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
-    var highlightCode: ((Code) -> NSAttributedString)?
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL, highlightCode: highlightCode)
+        var walker = AttributedStringWalker(environment: environment, attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
         walker.visit(document)
         return [walker.attributedString]
     }
@@ -266,21 +272,18 @@ public struct Markdown: AttributedStringConvertible {
         self.source = source
     }
 
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
-        await EnvironmentReader(\.markdownStylesheet) { stylesheet in
-            EnvironmentReader(\.highlightCode) { highlightCode in
-                MarkdownHelper(string: source, stylesheet: stylesheet, highlightCode: highlightCode)
-            }
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
+        EnvironmentReader(\.markdownStylesheet) { stylesheet in
+                MarkdownHelper(string: source, stylesheet: stylesheet)
         }.attributedString(environment: environment)
     }
 }
 
 extension MarkdownHelper {
-    init(string: String, stylesheet: any Stylesheet, highlightCode: ((Code) -> NSAttributedString)? = nil) {
+    init(string: String, stylesheet: any Stylesheet)  {
         self.document = Document(parsing: string)
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
-        self.highlightCode = highlightCode
     }
 }
 
@@ -297,9 +300,7 @@ extension EnvironmentValues {
 
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default, highlightCode: ((Code) -> NSAttributedString)? = nil) -> some AttributedStringConvertible {
-        var result = MarkdownHelper(string: self, stylesheet: stylesheet)
-        result.highlightCode = highlightCode
-        return result
+        MarkdownHelper(string: self, stylesheet: stylesheet)
     }
 }
 

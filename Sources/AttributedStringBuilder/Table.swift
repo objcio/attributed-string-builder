@@ -10,6 +10,7 @@ import Cocoa
 
 // TODO would be nice to have a builder here as well
 
+@MainActor
 public struct Table: AttributedStringConvertible {
     public init(contentWidth: Width = .percentage(100), rows: [TableRow]) {
         self.rows = rows
@@ -19,7 +20,7 @@ public struct Table: AttributedStringConvertible {
     public var rows: [TableRow]
     public var contentWidth: Width
 
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         guard !rows.isEmpty else { return [] }
         let result = NSMutableAttributedString()
         let table = NSTextTable()
@@ -27,13 +28,14 @@ public struct Table: AttributedStringConvertible {
         table.numberOfColumns = rows[0].cells.count
         for (rowIx, row) in rows.enumerated() {
             assert(row.cells.count == table.numberOfColumns)
-            await row.render(row: rowIx, table: table, environment: environment, result: result)
+            row.render(row: rowIx, table: table, environment: environment, result: result)
         }
         result.replaceCharacters(in: NSRange(location: result.length-1, length: 1), with: "")
         return [result]
     }
 }
 
+@MainActor
 public struct TableRow {
     public init(cells: [TableCell]) {
         self.cells = cells
@@ -41,17 +43,18 @@ public struct TableRow {
 
     public var cells: [TableCell]
 
-    func render(row: Int, table: NSTextTable, environment: EnvironmentValues, result: NSMutableAttributedString) async {
+    func render(row: Int, table: NSTextTable, environment: EnvironmentValues, result: NSMutableAttributedString) {
         for (column, cell) in cells.enumerated() {
             let block = NSTextTableBlock(table: table, startingRow: row, rowSpan: 1, startingColumn: column, columnSpan: 1)
             if let w = cell.width {
                 block.setContentWidth(w.value, type: w.type)
             }
-            await cell.render(block: block, environment: environment, result: result)
+            cell.render(block: block, environment: environment, result: result)
         }
     }
 }
 
+@MainActor
 public struct TableCell {
     public init(
         width: Table.Width? = nil,
@@ -78,7 +81,8 @@ public struct TableCell {
     public var width: Table.Width?
     public var alignment: NSTextAlignment = .left
 
-    func render(block: NSTextTableBlock, environment: EnvironmentValues, result: NSMutableAttributedString) async {
+    @MainActor
+    func render(block: NSTextTableBlock, environment: EnvironmentValues, result: NSMutableAttributedString) {
         block.setBorderColor(borderColor)
         for (edge, value) in borderWidth.allEdges {
             block.setWidth(value.value, type: value.type, for: .border, edge: edge)
@@ -94,7 +98,7 @@ public struct TableCell {
         paragraph.alignment = alignment
         paragraph.textBlocks = [block]
 
-        let contentsA = await NSMutableAttributedString(attributedString: contents.joined().run(environment: environment))
+        let contentsA = NSMutableAttributedString(attributedString: contents.joined().run(environment: environment))
 
         // Copy some style attributes from the cell contents if possible
         if let style = contentsA.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {

@@ -21,7 +21,7 @@ public struct Embed<V: View>: AttributedStringConvertible {
     }
 
     @MainActor
-    public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
+    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
         let renderer = ImageRenderer(content: view)
         renderer.proposedSize = proposal
         let resultSize = renderer.nsImage!.size

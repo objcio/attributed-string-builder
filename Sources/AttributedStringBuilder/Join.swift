@@ -4,15 +4,16 @@ struct Joined<Content: AttributedStringConvertible>: AttributedStringConvertible
     var separator: AttributedStringConvertible = "\n"
     @AttributedStringBuilder var content: Content
 
-    func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
-        [await single(environment: environment)]
+    func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
+        [single(environment: environment)]
     }
 
-    func single(environment: EnvironmentValues) async -> NSAttributedString {
-        let pieces = await content.attributedString(environment: environment)
+    @MainActor
+    func single(environment: EnvironmentValues) -> NSAttributedString {
+        let pieces = content.attributedString(environment: environment)
         guard let f = pieces.first else { return .init() }
         let result = NSMutableAttributedString(attributedString: f)
-        let sep = await separator.attributedString(environment: environment)
+        let sep = separator.attributedString(environment: environment)
         for piece in pieces.dropFirst() {
             for sepPiece in sep {
                 result.append(sepPiece)
