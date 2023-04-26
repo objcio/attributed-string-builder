@@ -20,8 +20,6 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
 
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         defer { context.state.footnoteCounter += 1 }
-//        environment.footnoteCounter += 1
-//        let counter = environment.footnoteCounter
         let counter = "\(context.state.footnoteCounter)"
         let stylesheet = context.environment.markdownStylesheet
         let annotation = Joined(separator: " ") {
@@ -38,9 +36,8 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
             .superscript()
             .modify { attrs in
                 var copiedContext = c
-                var copy = attrs
-                stylesheet.footnote(attributes: &copy)
-                copy.annotation = annotation.run(context: &copiedContext)
+                stylesheet.footnote(attributes: &attrs)
+                attrs.annotation = annotation.run(context: &copiedContext)
             }
         return result.attributedString(context: &context)
     }

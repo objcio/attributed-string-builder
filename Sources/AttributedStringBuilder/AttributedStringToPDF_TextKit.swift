@@ -42,7 +42,6 @@ public struct PDFResult {
 }
 
 extension NSAttributedString {
-//    public func pdf(size: CGSize = .a4, inset: CGSize = .init(width: .pointsPerInch, height: .pointsPerInch)) -> Data {
     @MainActor
     public func fancyPDF(
         pageSize: CGSize = .a4,
@@ -75,17 +74,6 @@ public struct Accessory {
         self.padding = padding
     }
 }
-
-public struct Annotation: Hashable {
-    public let characterRange: NSRange
-    public let string: NSAttributedString
-
-    public init(characterRange: NSRange, string: NSAttributedString) {
-        self.characterRange = characterRange
-        self.string = string
-    }
-}
-
 
 // From: https://stackoverflow.com/questions/58483933/create-pdf-with-multiple-pages
 @MainActor
@@ -239,7 +227,7 @@ class PDFRenderer {
                 let characterRange = pageLayoutManager.characterRange(forGlyphRange: pageLayoutManager.glyphRange(for: pageContentContainer), actualGlyphRange: nil)
                 let annotations = bookTextStorage.annotations(in: characterRange)
                 if !annotations.isEmpty {
-                    for (offset, element) in annotations.map(\.string).enumerated() {
+                    for (offset, element) in annotations.map(\.0).enumerated() {
                         storage.append(element)
                         if offset < annotations.count - 1 {
                             storage.append(NSAttributedString(string: "\n"))
@@ -281,7 +269,6 @@ class PDFRenderer {
             }
 
             let suppressHeadings = bookTextStorage.values(type: Bool.self, for: .suppressHeader, in: pageCharacterRange).map { $0.value }.allSatisfy { $0 }
-            print(pages.count, suppressHeadings)
 
             let pageAnnotationsBefore = bookTextStorage.annotations(in: pageCharacterRange)
 
@@ -289,6 +276,7 @@ class PDFRenderer {
             let pageHeaderInfo = accessoryInfo(accessory: header)
             // Add annotations if any
             var annotationsInfo = annotationsAccessoryInfo(pageContentContainer: pageContentContainer)
+
             // Add footer container
             var pageFooterInfo = accessoryInfo(accessory: footer)
 
@@ -510,21 +498,9 @@ private extension NSAttributedString {
         return values
     }
 
-    func annotations(in range: NSRange? = nil) -> [Annotation] {
-        var annotations: [Annotation] = []
-        enumerateAttribute(.annotation, in: range ?? NSRange(location: 0, length: length)) { value, range, stop in
-            guard let annotationString = value as? NSAttributedString else {
-                return
-            }
-
-            annotations.append(
-                Annotation(
-                    characterRange: range,
-                    string: annotationString
-                )
-            )
-        }
-        return annotations
+    func annotations(in range: NSRange? = nil) -> [(NSAttributedString, NSRange)] {
+        let result = values(type: NSAttributedString.self, for: .annotation, in: range)
+        return result
     }
 
 }
