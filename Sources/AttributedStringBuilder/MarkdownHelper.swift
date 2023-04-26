@@ -36,13 +36,13 @@ public struct Code: Hashable, Codable {
 
 @MainActor(unsafe)
 struct AttributedStringWalker: MarkupWalker {
-    var environment: EnvironmentValues
+    var context: Context
     var attributes: Attributes
     let stylesheet: Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
     var highlightCode: ((Code) -> any AttributedStringConvertible)? {
-        environment.highlightCode
+        context.environment.highlightCode
     }
 
     var attributedString = NSMutableAttributedString()
@@ -74,11 +74,11 @@ struct AttributedStringWalker: MarkupWalker {
         attributedString.append(NSAttributedString(string: inlineCode.code, attributes: attributes))
     }
 
-    func visitCodeBlock(_ codeBlock: CodeBlock) -> () {
+    mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> () {
         var attributes = attributes
         let code = codeBlock.code.trimmingCharacters(in: .whitespacesAndNewlines)
         if let h = highlightCode {
-            let result = h(Code(language: codeBlock.language, code: codeBlock.code)).attributedString(environment: environment)
+            let result = h(Code(language: codeBlock.language, code: codeBlock.code)).attributedString(context: &context)
             for r in result {
                 attributedString.append(r)
             }
@@ -259,9 +259,10 @@ fileprivate struct MarkdownHelper: AttributedStringConvertible {
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
-    func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(environment: environment, attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+    func attributedString(context: inout Context) -> [NSAttributedString] {
+        var walker = AttributedStringWalker(context: context, attributes: context.environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
         walker.visit(document)
+        context = walker.context
         return [walker.attributedString]
     }
 }
@@ -272,10 +273,10 @@ public struct Markdown: AttributedStringConvertible {
         self.source = source
     }
 
-    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
+    public func attributedString(context: inout Context) -> [NSAttributedString] {
         EnvironmentReader(\.markdownStylesheet) { stylesheet in
                 MarkdownHelper(string: source, stylesheet: stylesheet)
-        }.attributedString(environment: environment)
+        }.attributedString(context: &context)
     }
 }
 

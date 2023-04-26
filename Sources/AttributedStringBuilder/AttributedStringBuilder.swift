@@ -14,10 +14,10 @@ struct AttributedStringBuilder {
 
 extension AttributedStringConvertible {
     @MainActor
-    public func run(environment: EnvironmentValues) -> NSAttributedString {
+    public func run(context: inout Context) -> NSAttributedString {
         Joined(separator: "", content: {
                 self
-            }).single(environment: environment)       
+        }).single(context: &context)       
     }
 }
 

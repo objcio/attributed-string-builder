@@ -7,12 +7,12 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
 
     var contents: Contents
 
-    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
+    public func attributedString(context: inout Context) -> [NSAttributedString] {
         let _ = print("TODO footnote support")
 //        environment.footnoteCounter += 1
 //        let counter = environment.footnoteCounter
         let counter = "1" // todo
-        let stylesheet = environment.markdownStylesheet
+        let stylesheet = context.environment.markdownStylesheet
         let annotation = Joined(separator: " ") {
             "\(counter)\t"
             contents
@@ -30,7 +30,7 @@ public struct Footnote<Contents: AttributedStringConvertible>: AttributedStringC
 //                copy.annotation = annotation
 //            }
 //            .attributedString(&environment)
-        return result.attributedString(environment: environment)
+        return result.attributedString(context: &context)
     }
 }
 

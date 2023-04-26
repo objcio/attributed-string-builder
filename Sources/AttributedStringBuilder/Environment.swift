@@ -1,5 +1,21 @@
 import Foundation
 
+public struct StateValues {
+    public init() {
+    }
+
+    var userDefined: [ObjectIdentifier:Any] = [:]
+
+    // todo rename environmentkey to statekey
+    public subscript<Key: EnvironmentKey>(key: Key.Type = Key.self) -> Key.Value {
+        get {
+            userDefined[ObjectIdentifier(key)] as? Key.Value ?? Key.defaultValue
+        }
+        set {
+            userDefined[ObjectIdentifier(key)] = newValue
+        }
+    }
+}
 public struct EnvironmentValues {
     public init(attributes: Attributes = Attributes()) {
         self.attributes = attributes
@@ -33,8 +49,8 @@ public struct EnvironmentReader<Part, Content>: AttributedStringConvertible wher
     var keyPath: KeyPath<EnvironmentValues, Part>
     var content: (Part) -> Content
 
-    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        content(environment[keyPath: keyPath]).attributedString(environment: environment)
+    public func attributedString(context: inout Context) -> [NSAttributedString] {
+        content(context.environment[keyPath: keyPath]).attributedString(context: &context)
     }
 }
 
@@ -43,10 +59,11 @@ fileprivate struct EnvironmentModifier<Part, Content>: AttributedStringConvertib
     var modify: (inout Part) -> ()
     var content: Content
 
-    public func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var copy = environment
-        modify(&copy[keyPath: keyPath])
-        return content.attributedString(environment: copy)
+    public func attributedString(context: inout Context) -> [NSAttributedString] {
+        let oldEnv = context.environment
+        defer { context.environment = oldEnv }
+        modify(&context.environment[keyPath: keyPath])
+        return content.attributedString(context: &context)
     }
 }
 
