@@ -8,6 +8,7 @@ extension NSAttributedString.Key {
     static public let pageMargin = NSAttributedString.Key("io.objc.pageMargin")
     static public let backgroundView = NSAttributedString.Key("io.objc.backgroundView")
     static public let spreadBreak = NSAttributedString.Key("io.objc.spreadBreak")
+    static public let suppressHeader = NSAttributedString.Key("io.objc.suppressHeader")
 }
 
 extension Attributes {
@@ -44,6 +45,15 @@ extension Attributes {
         }
         set {
             customAttributes[NSAttributedString.Key.spreadBreak.rawValue] = newValue
+        }
+    }
+
+    public var suppressHeader: Bool {
+        get {
+            (customAttributes[NSAttributedString.Key.suppressHeader.rawValue] as? Bool) ?? false
+        }
+        set {
+            customAttributes[NSAttributedString.Key.suppressHeader.rawValue] = newValue
         }
     }
 }

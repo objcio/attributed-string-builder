@@ -266,7 +266,6 @@ class PDFRenderer {
             let pageCharacterRange = pageLayoutManager.characterRange(forGlyphRange: pageGlyphRange, actualGlyphRange: nil)
 
             let spreadBreak = bookTextStorage.values(type: Bool.self, for: .spreadBreak, in: pageCharacterRange).first?.value ?? false
-            print(spreadBreak, pages.count)
             if spreadBreak && pages.count.isMultiple(of: 2) {
                 pages.append(Page(container: nil, annotations: nil, header: nil, footer: nil, frameRect: frameRect))
             }
@@ -280,6 +279,9 @@ class PDFRenderer {
             if let info = headings.first(where: { $0.value.level == 1 }) {
                 chapterTitle = info.value.text
             }
+
+            let suppressHeadings = bookTextStorage.values(type: Bool.self, for: .suppressHeader, in: pageCharacterRange).map { $0.value }.allSatisfy { $0 }
+            print(pages.count, suppressHeadings)
 
             let pageAnnotationsBefore = bookTextStorage.annotations(in: pageCharacterRange)
 
@@ -315,7 +317,7 @@ class PDFRenderer {
                 Page(
                     container: pageContentContainer,
                     annotations: annotationsInfo,
-                    header: pageHeaderInfo,
+                    header: suppressHeadings ? nil : pageHeaderInfo,
                     footer: pageFooterInfo,
                     frameRect: frameRect
                 )
@@ -328,13 +330,16 @@ class PDFRenderer {
     private func addWidowAndOrphanWarnings() {
         let range = bookTextStorage.string.startIndex..<bookTextStorage.string.endIndex
         bookTextStorage.string.enumerateSubstrings(in: range, options: .byParagraphs) { [unowned self] substring, substringRange, enclosingRange, stop in
-            let nsRange = NSRange(substringRange, in: bookTextStorage.string)
+            var trimmed = substringRange
+            bookTextStorage.string.trim(&trimmed)
+            let nsRange = NSRange(trimmed, in: bookTextStorage.string)
             let pageRanges = bookLayoutManager.glyphPageRanges(for: nsRange)
             guard pageRanges.count > 1 else { return }
 
             for range in [pageRanges.first!, pageRanges.last!] {
                 if bookLayoutManager.lineFragmentRects(for: range).count == 1 {
                     let charRange = bookLayoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
+                    print((bookTextStorage.string as NSString).substring(with: charRange).utf8)
                     bookTextStorage.addAttribute(.backgroundColor, value: NSColor.yellow, range: charRange)
                 }
             }
