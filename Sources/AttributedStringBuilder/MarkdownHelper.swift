@@ -9,10 +9,36 @@ extension Stylesheet where Self == DefaultStylesheet {
     }
 }
 
+struct HighlightCode: EnvironmentKey {
+    static var defaultValue: ((Code) -> NSAttributedString)? = nil
+}
+
+extension EnvironmentValues {
+    public var highlightCode: ((Code) -> NSAttributedString)? {
+        get {
+            self[HighlightCode.self]
+        }
+        set {
+            self[HighlightCode.self] = newValue
+        }
+    }
+}
+
+public struct Code: Hashable, Codable {
+    public init(language: String? = nil, code: String) {
+        self.language = language
+        self.code = code
+    }
+
+    public var language: String?
+    public var code: String
+}
+
 struct AttributedStringWalker: MarkupWalker {
     var attributes: Attributes
     let stylesheet: Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
+    var highlightCode: ((Code) -> NSAttributedString)?
 
     var attributedString = NSMutableAttributedString()
 
@@ -45,8 +71,14 @@ struct AttributedStringWalker: MarkupWalker {
 
     func visitCodeBlock(_ codeBlock: CodeBlock) -> () {
         var attributes = attributes
-        stylesheet.codeBlock(attributes: &attributes)
-        attributedString.append(NSAttributedString(string: codeBlock.code.trimmingCharacters(in: .whitespacesAndNewlines), attributes: attributes))
+        let code = codeBlock.code.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let h = highlightCode {
+            let result = h(Code(language: codeBlock.language, code: codeBlock.code))
+            attributedString.append(result)
+        } else {
+            stylesheet.codeBlock(attributes: &attributes)
+            attributedString.append(NSAttributedString(string: code, attributes: attributes))
+        }
     }
 
     func visitInlineHTML(_ inlineHTML: InlineHTML) -> () {
@@ -219,9 +251,10 @@ fileprivate struct MarkdownHelper: AttributedStringConvertible {
     var document: Document
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
+    var highlightCode: ((Code) -> NSAttributedString)?
 
     func attributedString(environment: EnvironmentValues) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        var walker = AttributedStringWalker(attributes: environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL, highlightCode: highlightCode)
         walker.visit(document)
         return [walker.attributedString]
     }
@@ -235,16 +268,19 @@ public struct Markdown: AttributedStringConvertible {
 
     public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
         await EnvironmentReader(\.markdownStylesheet) { stylesheet in
-            MarkdownHelper(string: source, stylesheet: stylesheet)
+            EnvironmentReader(\.highlightCode) { highlightCode in
+                MarkdownHelper(string: source, stylesheet: stylesheet, highlightCode: highlightCode)
+            }
         }.attributedString(environment: environment)
     }
 }
 
 extension MarkdownHelper {
-    init(string: String, stylesheet: any Stylesheet) {
+    init(string: String, stylesheet: any Stylesheet, highlightCode: ((Code) -> NSAttributedString)? = nil) {
         self.document = Document(parsing: string)
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
+        self.highlightCode = highlightCode
     }
 }
 
@@ -260,8 +296,10 @@ extension EnvironmentValues {
 }
 
 extension String {
-    public func markdown(stylesheet: any Stylesheet = .default) -> some AttributedStringConvertible {
-        MarkdownHelper(string: self, stylesheet: stylesheet)
+    public func markdown(stylesheet: any Stylesheet = .default, highlightCode: ((Code) -> NSAttributedString)? = nil) -> some AttributedStringConvertible {
+        var result = MarkdownHelper(string: self, stylesheet: stylesheet)
+        result.highlightCode = highlightCode
+        return result
     }
 }
 

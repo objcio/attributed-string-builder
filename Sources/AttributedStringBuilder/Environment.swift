@@ -25,13 +25,13 @@ public protocol EnvironmentKey {
 }
 
 public struct EnvironmentReader<Part, Content>: AttributedStringConvertible where Content: AttributedStringConvertible {
-    public init(_ keyPath: KeyPath<EnvironmentValues, Part>, @AttributedStringBuilder content: @escaping (Part) -> Content) {
+    public init(_ keyPath: KeyPath<EnvironmentValues, Part>, @AttributedStringBuilder content: @escaping (Part) async -> Content) {
         self.keyPath = keyPath
         self.content = content
     }
 
     var keyPath: KeyPath<EnvironmentValues, Part>
-    var content: (Part) -> Content
+    var content: (Part) async -> Content
 
     public func attributedString(environment: EnvironmentValues) async -> [NSAttributedString] {
         await content(environment[keyPath: keyPath]).attributedString(environment: environment)
