@@ -2,7 +2,7 @@ import XCTest
 import SwiftUI
 import AttributedStringBuilder
 
-@AttributedStringBuilder
+@AttributedStringBuilder @MainActor
 var example: some AttributedStringConvertible {
     "Hello, World!"
         .bold()
@@ -76,9 +76,10 @@ let sampleAttributes = Attributes(family: "Georgia", size: 16, textColor: .black
 
 class Tests: XCTestCase {
     func testPDF() async {
+        var context = Context(environment: .init(attributes: sampleAttributes))
         let data = await example
             .joined(separator: "\n")
-            .run(environment: .init(attributes: sampleAttributes))
+            .run(context: &context)
             .pdf()
         try! data.write(to: .desktopDirectory.appending(component: "out.pdf"))
 

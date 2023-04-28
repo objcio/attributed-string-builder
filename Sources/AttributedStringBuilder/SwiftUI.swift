@@ -40,7 +40,7 @@ public struct Embed<V: View>: AttributedStringConvertible {
             pdfContext.endPDFPage()
             pdfContext.closePDF()
         }
-        var i = NSImage(data: data as Data)!
+        let i = NSImage(data: data as Data)!
         i.size.width *= scale
         i.size.height *= scale
         return i.attributedString(context: &context)

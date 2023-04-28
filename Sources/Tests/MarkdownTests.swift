@@ -1,14 +1,16 @@
 import AttributedStringBuilder
 import XCTest
 
+@MainActor
 class MarkdownTests: XCTestCase {
     func testSimpleList() async {
+        var context = Context(environment: .init())
         let markdown = """
         - One
         - Two
         - Three
         """
-        let attrStr = await markdown.markdown().run(environment: .init())
+        let attrStr = markdown.markdown().run(context: &context)
         let expectation = """
         \t•\tOne
         \t•\tTwo
@@ -18,12 +20,13 @@ class MarkdownTests: XCTestCase {
     }
 
     func testOrderedList() async {
+        var context = Context(environment: .init())
         let markdown = """
         1. One
         1. Two
         1. Three
         """
-        let attrStr = await markdown.markdown().run(environment: .init())
+        let attrStr = markdown.markdown().run(context: &context)
         let expectation = """
         \t1.\tOne
         \t2.\tTwo
@@ -32,7 +35,8 @@ class MarkdownTests: XCTestCase {
         XCTAssertEqual(attrStr.string, expectation)
     }
 
-    func testIndentedList() async {
+    func testIndentedList() {
+        var context = Context(environment: .init())
         let markdown = Markdown("""
         - One
         - Two
@@ -40,7 +44,7 @@ class MarkdownTests: XCTestCase {
           - Four
         - Five
         """)
-        let attrStr = await markdown.run(environment: .init())
+        let attrStr = markdown.run(context: &context)
         let expectation = """
         \t•\tOne
         \t•\tTwo

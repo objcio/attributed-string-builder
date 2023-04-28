@@ -13,16 +13,22 @@ extension EnvironmentValues {
 }
 
 class EnvironmentTests: XCTestCase {
-    func testDefaultValue() async throws {
+    @MainActor
+    func testDefaultValue() throws {
         @AttributedStringBuilder var str: some AttributedStringConvertible {
             EnvironmentReader(\.test) { envValue in
                 envValue
             }
         }
-        let result = await str.run(environment: .init())
+        var context = Context(environment: .init())
+        let result = str.run(context: &context)
         XCTAssertEqual(result.string, "Test")
 
-        let result2 = await str.environment(\.test, value: "Hello").run(environment: .init())
+        context = Context(environment: .init())
+
+        let result2 = str
+            .environment(\.test, value: "Hello")
+            .run(context: &context)
         XCTAssertEqual(result2.string, "Hello")
     }
 }
