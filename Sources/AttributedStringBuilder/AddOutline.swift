@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Chris Eidhof on 03.01.23.
-//
-
 import Foundation
 import PDFKit
 import Markdown
@@ -60,6 +53,7 @@ extension PDFDocument {
 
 
     public func addOutline(headings: [MyHeading]) {
+        // For some reason, we need a root and a child and then the actual outline.
         let child = PDFOutline()
         child.label = "Child"
 
