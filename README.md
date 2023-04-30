@@ -7,7 +7,8 @@ A simple way to build up attributed strings using result builders from a variety
 - Images
 - SwiftUI Views
 - Table support
-- PDF export
+- Multi-page PDF export
+- Footnotes
 
 Here's an example showing plain strings, Markdown and SwiftUI views:
 
@@ -76,7 +77,11 @@ You can construct tables in attributed strings using the [Table](Sources/Attribu
 
 ### Environment
 
-You can use the environment in a way similar to SwiftUI's Environment to pass values down the view tree.
+You can use the environment in a way similar to SwiftUI's Environment to pass values down the tree.
+
+### State
+
+Similar to the environment, you can also thread state through. This is useful (for example) to number footnotes.
 
 ## Swift Talk Episodes
 
