@@ -4,9 +4,16 @@ import AttributedStringBuilder
 
 @AttributedStringBuilder @MainActor
 var example: some AttributedStringConvertible {
-    "Hello, World!"
-        .bold()
-        .modify { $0.backgroundColor = .yellow }
+    Group {
+        "Hello, World!"
+            .bold()
+            .modify { $0.backgroundColor = .yellow }
+        Footnote {
+            Markdown("""
+        Here's the *contents* of a footnote.
+        """)
+        }
+    }.joined(separator: "")
     Array(repeating:
     """
     This is some markdown with **strong** `code` text. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas tempus, tortor eu maximus gravida, ante diam fermentum magna, in gravida ex tellus ac purus.
@@ -75,12 +82,14 @@ let sampleAttributes = Attributes(family: "Georgia", size: 16, textColor: .black
 
 
 class Tests: XCTestCase {
+    @MainActor
     func testPDF() async {
         var context = Context(environment: .init(attributes: sampleAttributes))
         let data = await example
             .joined(separator: "\n")
             .run(context: &context)
-            .pdf()
+            .fancyPDF()
+            .data
         try! data.write(to: .desktopDirectory.appending(component: "out.pdf"))
 
     }

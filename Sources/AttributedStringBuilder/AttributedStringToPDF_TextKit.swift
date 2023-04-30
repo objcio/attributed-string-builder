@@ -49,7 +49,7 @@ extension NSAttributedString {
         header: Accessory? = nil,
         footer: Accessory? = nil,
         annotationsPadding: NSEdgeInsets = .init(),
-        highlightWarnings: Bool
+        highlightWarnings: Bool = false
     ) -> PDFResult {
         let r = PDFRenderer(pageSize: pageSize,
                             pageMargin: pageMargin,
