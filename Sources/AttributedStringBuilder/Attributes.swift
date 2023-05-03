@@ -86,6 +86,10 @@ extension Attributes {
         headIndent = value
     }
 
+    public var computedFont: NSFont {
+        font
+    }
+
     fileprivate var font: NSFont {
         var fontDescriptor = NSFontDescriptor(name: family, size: size)
 

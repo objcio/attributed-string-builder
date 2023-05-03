@@ -1,6 +1,15 @@
 import Cocoa
 import SwiftUI
 
+extension AttributedStringConvertible {
+    public func background<Content: View>(@ViewBuilder content: () -> Content) -> some AttributedStringConvertible {
+        let c = content()
+        return modify(perform: {
+            $0.backgroundView = AnyView(c.font(Font($0.computedFont)))
+        })
+    }
+}
+
 public struct Embed<V: View>: AttributedStringConvertible {
     public init(proposal: ProposedViewSize = .unspecified, scale: CGFloat = 0.5, @ViewBuilder view: () -> V) {
         self.proposal = proposal
@@ -22,7 +31,8 @@ public struct Embed<V: View>: AttributedStringConvertible {
 
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
-        let renderer = ImageRenderer(content: view)
+        let renderer = ImageRenderer(content: view
+            .font(SwiftUI.Font(context.environment.attributes.computedFont)))
         renderer.proposedSize = proposal
         let resultSize = renderer.nsImage!.size
         let data = NSMutableData()

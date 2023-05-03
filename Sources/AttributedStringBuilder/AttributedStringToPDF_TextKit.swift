@@ -327,7 +327,7 @@ class PDFRenderer {
             for range in [pageRanges.first!, pageRanges.last!] {
                 if bookLayoutManager.lineFragmentRects(for: range).count == 1 {
                     let charRange = bookLayoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
-                    print((bookTextStorage.string as NSString).substring(with: charRange).utf8)
+//                    print((bookTextStorage.string as NSString).substring(with: charRange).utf8)
                     bookTextStorage.addAttribute(.backgroundColor, value: NSColor.yellow, range: charRange)
                 }
             }
