@@ -9,6 +9,7 @@ extension NSAttributedString.Key {
     static public let pageBackgroundView = NSAttributedString.Key("io.objc.pageBackgroundView")
     static public let spreadBreak = NSAttributedString.Key("io.objc.spreadBreak")
     static public let suppressHeader = NSAttributedString.Key("io.objc.suppressHeader")
+    static public let backgroundView = NSAttributedString.Key("io.objc.backgroundView")
 }
 
 extension Attributes {
@@ -36,6 +37,16 @@ extension Attributes {
         }
         set {
             customAttributes[NSAttributedString.Key.pageBackgroundView.rawValue] = newValue
+        }
+    }
+
+    // For now, this doesn't work correctly across multiple lines, it takes the complete bounding box and draws the background behind there.
+    public var backgroundView: AnyView? {
+        get {
+            customAttributes[NSAttributedString.Key.backgroundView.rawValue] as? AnyView
+        }
+        set {
+            customAttributes[NSAttributedString.Key.backgroundView.rawValue] = newValue
         }
     }
 

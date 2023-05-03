@@ -392,11 +392,6 @@ class PDFRenderer {
                     origin.y -= header.padding.top
                 }
 
-                // Draw content
-                bookLayoutManager.drawBackground(forGlyphRange: range, at: origin)
-                bookLayoutManager.drawGlyphs(forGlyphRange: range, at: origin)
-                origin.y += container.size.height
-
                 // Compute the local position within the page for the range
                 func computeBounds(range: NSRange) -> CGRect {
                     var rect = bookLayoutManager.boundingRect(forGlyphRange: range, in: container)
@@ -405,6 +400,30 @@ class PDFRenderer {
                     rect.origin.y = pageRect.height - rect.origin.y - rect.height
                     return rect
                 }
+
+                func drawSwiftUIBackgrounds() {
+
+                    let backgroundViews: [(value: AnyView, range: NSRange)] = bookTextStorage.values(for: .backgroundView, in: range)
+                    for (value, range) in backgroundViews {
+                        let b = computeBounds(range: range)
+                        let renderer = ImageRenderer(content: value)
+                        renderer.proposedSize = .init(width: b.width, height: b.height)
+                        renderer.render(rasterizationScale: 1) { size, render in
+                            context.saveGState()
+                            context.concatenate(.init(scaleX: 1, y: -1))
+                            context.translateBy(x: 0, y: -pageRect.height)
+                            context.translateBy(x: b.minX, y: b.minY)
+                            render(context)
+                            context.restoreGState()
+                        }
+                    }
+                }
+
+                // Draw content
+                bookLayoutManager.drawBackground(forGlyphRange: range, at: origin)
+                drawSwiftUIBackgrounds()
+                bookLayoutManager.drawGlyphs(forGlyphRange: range, at: origin)
+                origin.y += container.size.height
 
                 let headings: [(value: HeadingInfo, range: NSRange)] = bookTextStorage.values(for: .heading, in: range)
                 self.headings.append(contentsOf: headings.map { h in

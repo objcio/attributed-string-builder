@@ -2,6 +2,11 @@ import XCTest
 import SwiftUI
 import AttributedStringBuilder
 
+var backgroundGradient: some View {
+    RoundedRectangle(cornerRadius: 2)
+        .fill(LinearGradient(colors: [.green, .red], startPoint: .topLeading, endPoint: .bottomTrailing))
+}
+
 @AttributedStringBuilder @MainActor
 var example: some AttributedStringConvertible {
     Group {
@@ -13,6 +18,12 @@ var example: some AttributedStringConvertible {
         Here's the *contents* of a footnote.
         """)
         }
+        ". "
+        "Some more text"
+            .modify {
+                $0.backgroundView = AnyView(backgroundGradient)
+            }
+
     }.joined(separator: "")
     Array(repeating:
     """
@@ -83,9 +94,9 @@ let sampleAttributes = Attributes(family: "Georgia", size: 16, textColor: .black
 
 class Tests: XCTestCase {
     @MainActor
-    func testPDF() async {
+    func testPDF() {
         var context = Context(environment: .init(attributes: sampleAttributes))
-        let data = await example
+        let data = example
             .joined(separator: "\n")
             .run(context: &context)
             .fancyPDF()
