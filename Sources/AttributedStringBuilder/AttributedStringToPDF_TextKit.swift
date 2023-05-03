@@ -368,7 +368,7 @@ class PDFRenderer {
                 context.restoreGState()
             }
 
-            if let backgroundView = attributes[.backgroundView] as? AnyView {
+            if let backgroundView = attributes[.pageBackgroundView] as? AnyView {
                 let renderer = ImageRenderer(content: backgroundView)
                 renderer.proposedSize = ProposedViewSize(pageRect.size)
                 context.concatenate(.init(scaleX: 1, y: -1))

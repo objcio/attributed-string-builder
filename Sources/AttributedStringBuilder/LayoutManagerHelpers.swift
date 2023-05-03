@@ -26,9 +26,12 @@ extension NSLayoutManager {
         var location = glyphRange.location
         var effectiveRange = NSRange()
         while location < glyphRange.upperBound {
-            let _ = textContainer(forGlyphAt: location, effectiveRange: &effectiveRange)!
-            result.append(effectiveRange.intersection(glyphRange)!)
-            location = effectiveRange.upperBound
+            if let _ = textContainer(forGlyphAt: location, effectiveRange: &effectiveRange) { // todo not sure if this should be an if-let
+                result.append(effectiveRange.intersection(glyphRange)!)
+                location = effectiveRange.upperBound
+            } else {
+                location = glyphRange.upperBound
+            }
         }
         return result
     }

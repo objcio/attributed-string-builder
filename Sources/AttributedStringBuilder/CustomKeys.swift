@@ -6,7 +6,7 @@ extension NSAttributedString.Key {
     static public let pageBackground = NSAttributedString.Key("pageBackground")
     static public let annotation = NSAttributedString.Key("48611742167f11ed861d0242ac120002")
     static public let pageMargin = NSAttributedString.Key("io.objc.pageMargin")
-    static public let backgroundView = NSAttributedString.Key("io.objc.backgroundView")
+    static public let pageBackgroundView = NSAttributedString.Key("io.objc.pageBackgroundView")
     static public let spreadBreak = NSAttributedString.Key("io.objc.spreadBreak")
     static public let suppressHeader = NSAttributedString.Key("io.objc.suppressHeader")
 }
@@ -30,12 +30,12 @@ extension Attributes {
         }
     }
 
-    public var backgroundView: AnyView? {
+    public var pageBackgroundView: AnyView? {
         get {
-            customAttributes[NSAttributedString.Key.backgroundView.rawValue] as? AnyView
+            customAttributes[NSAttributedString.Key.pageBackgroundView.rawValue] as? AnyView
         }
         set {
-            customAttributes[NSAttributedString.Key.backgroundView.rawValue] = newValue
+            customAttributes[NSAttributedString.Key.pageBackgroundView.rawValue] = newValue
         }
     }
 
