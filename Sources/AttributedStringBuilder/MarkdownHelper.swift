@@ -163,14 +163,15 @@ struct AttributedStringWalker: MarkupWalker {
         stylesheet.list(attributes: &attributes)
 
         let isOrdered = list is OrderedList
+        let startIndex = Int((list as? OrderedList)?.startIndex ?? 1)
 
         attributes.headIndent += attributes.tabStops[1].location
 
-        for (item, number) in zip(list.listItems, 1...) {
+        for (item, number) in zip(list.listItems, startIndex...) {
             // Append list item prefix
             let prefix: String
             var prefixAttributes = attributes
-            
+
             if let checkbox = item.checkbox {
                 switch checkbox {
                 case .checked:

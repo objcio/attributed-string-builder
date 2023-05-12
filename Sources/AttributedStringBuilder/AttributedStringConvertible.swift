@@ -46,7 +46,6 @@ extension NSAttributedString: AttributedStringConvertible {
 }
 
 extension Array: AttributedStringConvertible where Element == AttributedStringConvertible {
-
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         var result: [NSAttributedString] = []

@@ -34,10 +34,10 @@ public struct Embed<V: View>: AttributedStringConvertible {
         let renderer = ImageRenderer(content: view
             .font(SwiftUI.Font(context.environment.attributes.computedFont)))
         renderer.proposedSize = proposal
-        let resultSize = renderer.nsImage!.size
+        let _ = renderer.nsImage // this is necessary to get the correct size in the .render closure
         let data = NSMutableData()
         renderer.render { size, renderer in
-            var mediaBox = CGRect(origin: .zero, size: resultSize)
+            var mediaBox = CGRect(origin: .zero, size: size)
             guard let consumer = CGDataConsumer(data: data),
                   let pdfContext =  CGContext(consumer: consumer, mediaBox: &mediaBox, nil)
             else {
