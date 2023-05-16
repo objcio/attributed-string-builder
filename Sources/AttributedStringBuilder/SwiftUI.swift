@@ -10,50 +10,76 @@ extension AttributedStringConvertible {
     }
 }
 
+extension View {
+    func snapshot(proposal: ProposedViewSize) -> NSImage? {
+        let controller = NSHostingController(rootView: self.frame(width: proposal.width, height: proposal.height))
+        let targetSize = controller.view.intrinsicContentSize
+        let contentRect = NSRect(origin: .zero, size: targetSize)
+
+        let window = NSWindow(
+            contentRect: contentRect,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = controller.view
+
+        guard
+            let bitmapRep = controller.view.bitmapImageRepForCachingDisplay(in: contentRect)
+        else { return nil }
+
+        controller.view.cacheDisplay(in: contentRect, to: bitmapRep)
+        let image = NSImage(size: bitmapRep.size)
+        image.addRepresentation(bitmapRep)
+        return image
+    }
+}
+
 public struct Embed<V: View>: AttributedStringConvertible {
-    public init(proposal: ProposedViewSize = .unspecified, scale: CGFloat = 0.5, @ViewBuilder view: () -> V) {
+    public init(proposal: ProposedViewSize = .unspecified, scale: CGFloat = 1, bitmap: Bool = false, @ViewBuilder view: () -> V) {
         self.proposal = proposal
         self.view = view()
         self.scale = scale
+        self.bitmap = bitmap
     }
 
     var scale: CGFloat
     var proposal: ProposedViewSize = .unspecified
-    @ViewBuilder var view: V
-
-
-    @MainActor
-    public var size: CGSize {
-        let renderer = ImageRenderer(content: view)
-        renderer.proposedSize = proposal
-        return renderer.nsImage!.size
-    }
+    var bitmap: Bool
+    var view: V
 
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
-        let renderer = ImageRenderer(content: view
-            .font(SwiftUI.Font(context.environment.attributes.computedFont)))
-        renderer.proposedSize = proposal
-        let _ = renderer.nsImage // this is necessary to get the correct size in the .render closure
-        let data = NSMutableData()
-        renderer.render { size, renderer in
-            var mediaBox = CGRect(origin: .zero, size: size)
-            guard let consumer = CGDataConsumer(data: data),
-                  let pdfContext =  CGContext(consumer: consumer, mediaBox: &mediaBox, nil)
-            else {
-                return
+        if bitmap {
+            let i = view.snapshot(proposal: proposal)!
+            i.size.width *= scale
+            i.size.height *= scale
+            return i.attributedString(context: &context)
+        } else {
+            let renderer = ImageRenderer(content: view
+                .font(SwiftUI.Font(context.environment.attributes.computedFont)))
+            renderer.proposedSize = proposal
+            let _ = renderer.nsImage! // this is necessary to get the correct size in the .render closure, even for pdf
+            let data = NSMutableData()
+            renderer.render { size, renderer in
+                var mediaBox = CGRect(origin: .zero, size: size)
+                guard let consumer = CGDataConsumer(data: data),
+                      let pdfContext =  CGContext(consumer: consumer, mediaBox: &mediaBox, nil)
+                else {
+                    return
+                }
+                pdfContext.beginPDFPage(nil)
+                pdfContext.translateBy(x: mediaBox.size.width / 2 - size.width / 2,
+                                       y: mediaBox.size.height / 2 - size.height / 2)
+                renderer(pdfContext)
+                pdfContext.endPDFPage()
+                pdfContext.closePDF()
             }
-            pdfContext.beginPDFPage(nil)
-            pdfContext.translateBy(x: mediaBox.size.width / 2 - size.width / 2,
-                                   y: mediaBox.size.height / 2 - size.height / 2)
-            renderer(pdfContext)
-            pdfContext.endPDFPage()
-            pdfContext.closePDF()
+            let i = NSImage(data: data as Data)!
+            i.size.width *= scale
+            i.size.height *= scale
+            return i.attributedString(context: &context)
         }
-        let i = NSImage(data: data as Data)!
-        i.size.width *= scale
-        i.size.height *= scale
-        return i.attributedString(context: &context)
     }
 }
 
