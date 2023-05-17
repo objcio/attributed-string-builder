@@ -23,6 +23,7 @@ public struct NumberedList<Content: AttributedStringConvertible>: AttributedStri
         }
 
         let stylesheet = context.environment.markdownStylesheet
+        stylesheet.list(attributes: &attributes)
 
         attributes.headIndent += attributes.tabStops[1].location
         let renderedChildren = children.attributedString(context: &context)
