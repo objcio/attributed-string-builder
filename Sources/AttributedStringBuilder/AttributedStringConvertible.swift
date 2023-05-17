@@ -27,6 +27,12 @@ public struct Group<Content>: AttributedStringConvertible where Content: Attribu
     }
 }
 
+extension Int: AttributedStringConvertible {
+    public func attributedString(context: inout Context) -> [NSAttributedString] {
+        [.init(string: "\(self)", attributes: context.environment.attributes.atts)]
+    }
+}
+
 extension String: AttributedStringConvertible {
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         [.init(string: self, attributes: context.environment.attributes.atts)]

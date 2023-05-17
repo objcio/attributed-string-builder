@@ -105,7 +105,8 @@ struct AttributedStringWalker: MarkupWalker {
         let prefixStr = "io.objc.interpolate."
         var remainder = symbolLink.destination ?? ""
         guard remainder.hasPrefix(prefixStr) else {
-            fatalError()
+            attributedString.append(NSAttributedString(string: remainder, attributes: attributes))
+            return
         }
         remainder.removeFirst(prefixStr.count)
         guard let i = Int(remainder) else {
@@ -184,6 +185,7 @@ struct AttributedStringWalker: MarkupWalker {
         let isOrdered = list is OrderedList
         let startIndex = Int((list as? OrderedList)?.startIndex ?? 1)
 
+//        attributes.firstlineHeadIndent = attributes.headIndent
         attributes.headIndent += attributes.tabStops[1].location
 
         for (item, number) in zip(list.listItems, startIndex...) {
