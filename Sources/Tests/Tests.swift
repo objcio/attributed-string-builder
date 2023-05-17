@@ -9,6 +9,7 @@ var backgroundGradient: some View {
 
 @AttributedStringBuilder @MainActor
 var example: some AttributedStringConvertible {
+    Markdown("Hello *\("test".textColor(.systemRed)) world*")
     NumberedList {
         "First Item"
         Markdown("My second item")

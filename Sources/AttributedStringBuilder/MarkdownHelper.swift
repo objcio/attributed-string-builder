@@ -36,8 +36,13 @@ public struct Code: Hashable, Codable {
 
 @MainActor(unsafe)
 struct AttributedStringWalker: MarkupWalker {
+    var interpolationSegments: [any AttributedStringConvertible]
     var context: Context
-    var attributes: Attributes
+    var attributes: Attributes {
+        get { context.environment.attributes }
+        set { context.environment.attributes = newValue }
+    }
+
     let stylesheet: Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
@@ -94,6 +99,20 @@ struct AttributedStringWalker: MarkupWalker {
 
     func visitHTMLBlock(_ html: HTMLBlock) -> () {
         fatalError()
+    }
+
+    mutating func visitSymbolLink(_ symbolLink: SymbolLink) -> () {
+        let prefixStr = "io.objc.interpolate."
+        var remainder = symbolLink.destination ?? ""
+        guard remainder.hasPrefix(prefixStr) else {
+            fatalError()
+        }
+        remainder.removeFirst(prefixStr.count)
+        guard let i = Int(remainder) else {
+            fatalError()
+        }
+        let component = interpolationSegments[i]
+        attributedString.append(component.run(context: &context))
     }
 
     mutating func visitEmphasis(_ emphasis: Emphasis) -> () {
@@ -256,21 +275,22 @@ extension Checkbox {
 }
 
 fileprivate struct MarkdownHelper: AttributedStringConvertible {
+    var segments: [any AttributedStringConvertible]
     var document: Document
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
     func attributedString(context: inout Context) -> [NSAttributedString] {
-        var walker = AttributedStringWalker(context: context, attributes: context.environment.attributes, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        var walker = AttributedStringWalker(interpolationSegments: segments, context: context, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
         walker.visit(document)
-        context = walker.context
+        context.state = walker.context.state
         return [walker.attributedString]
     }
 }
 
 public struct Markdown: AttributedStringConvertible {
-    public var source: String
-    public init(_ source: String) {
+    public var source: MarkdownString
+    public init(_ source: MarkdownString) {
         self.source = source
     }
 
@@ -282,8 +302,25 @@ public struct Markdown: AttributedStringConvertible {
 }
 
 extension MarkdownHelper {
-    init(string: String, stylesheet: any Stylesheet)  {
-        self.document = Document(parsing: string)
+    init(string: MarkdownString, stylesheet: any Stylesheet)  {
+        var components: [any AttributedStringConvertible] = []
+        let str = string.pieces.map {
+            switch $0 {
+            case .raw(let s): return s
+            case .component(let c):
+                defer { components.append(c) }
+                return "``io.objc.interpolate.\(components.count)``"
+            }
+        }.joined(separator: "")
+        self.segments = components
+        self.document = Document(parsing: str, options: .parseSymbolLinks)
+        self.stylesheet = stylesheet
+        self.makeCheckboxURL = nil
+    }
+
+    init(verbatim: String, stylesheet: any Stylesheet) {
+        self.segments = []
+        self.document = Document(parsing: verbatim, options: .parseSymbolLinks)
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
     }
@@ -302,12 +339,12 @@ extension EnvironmentValues {
 
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default, highlightCode: ((Code) -> NSAttributedString)? = nil) -> some AttributedStringConvertible {
-        MarkdownHelper(string: self, stylesheet: stylesheet)
+        MarkdownHelper(verbatim: self, stylesheet: stylesheet)
     }
 }
 
 extension Document {
     public func markdown(stylesheet: any Stylesheet = .default, makeCheckboxURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
-        MarkdownHelper(document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        MarkdownHelper(segments: [], document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
     }
 }
