@@ -9,6 +9,11 @@ var backgroundGradient: some View {
 
 @AttributedStringBuilder @MainActor
 var example: some AttributedStringConvertible {
+    NumberedList {
+        "First Item"
+        Markdown("My second item")
+        Array(repeating: "Third item. ", count: 10).joined(separator: "")
+    }
     Group {
         "Hello, World!"
             .bold()
