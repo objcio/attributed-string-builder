@@ -9,12 +9,14 @@ var backgroundGradient: some View {
 
 @AttributedStringBuilder @MainActor
 var example: some AttributedStringConvertible {
+    Markdown("""
+    1. This is a nested list.
+        1. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. 
+        1. Two
+        1. Three
+    1. And the second item
+    """)
     Markdown("Hello *\("test".textColor(.systemRed)) world*")
-    NumberedList {
-        "First Item"
-        Markdown("My second item")
-        Array(repeating: "Third item. ", count: 10).joined(separator: "")
-    }
     Group {
         "Hello, World!"
             .bold()

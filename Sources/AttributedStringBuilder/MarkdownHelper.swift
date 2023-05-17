@@ -185,7 +185,7 @@ struct AttributedStringWalker: MarkupWalker {
         let isOrdered = list is OrderedList
         let startIndex = Int((list as? OrderedList)?.startIndex ?? 1)
 
-//        attributes.firstlineHeadIndent = attributes.headIndent
+        attributes.firstlineHeadIndent = attributes.headIndent
         attributes.headIndent += attributes.tabStops[1].location
 
         for (item, number) in zip(list.listItems, startIndex...) {
