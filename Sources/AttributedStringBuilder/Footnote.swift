@@ -5,7 +5,7 @@ struct FootnoteCounter: StateKey {
 }
 
 extension StateValues {
-    var footnoteCounter: Int {
+    public var footnoteCounter: Int {
         get { self[FootnoteCounter.self] }
         set { self[FootnoteCounter.self] = newValue }
     }
