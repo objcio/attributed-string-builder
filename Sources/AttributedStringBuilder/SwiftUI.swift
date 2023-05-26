@@ -35,8 +35,19 @@ extension View {
     }
 }
 
+struct DefaultEmbedProposal: EnvironmentKey {
+    static let defaultValue: ProposedViewSize = .unspecified
+}
+
+extension EnvironmentValues {
+    public var defaultProposal: ProposedViewSize {
+        get { self[DefaultEmbedProposal.self] }
+        set { self[DefaultEmbedProposal.self] = newValue }
+    }
+}
+
 public struct Embed<V: View>: AttributedStringConvertible {
-    public init(proposal: ProposedViewSize = .unspecified, scale: CGFloat = 1, bitmap: Bool = false, @ViewBuilder view: () -> V) {
+    public init(proposal: ProposedViewSize? = nil, scale: CGFloat = 1, bitmap: Bool = false, @ViewBuilder view: () -> V) {
         self.proposal = proposal
         self.view = view()
         self.scale = scale
@@ -44,12 +55,13 @@ public struct Embed<V: View>: AttributedStringConvertible {
     }
 
     var scale: CGFloat
-    var proposal: ProposedViewSize = .unspecified
+    var proposal: ProposedViewSize?
     var bitmap: Bool
     var view: V
 
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
+        let proposal = self.proposal ?? context.environment.defaultProposal
         if bitmap {
             let i = view.snapshot(proposal: proposal)!
             i.size.width *= scale
