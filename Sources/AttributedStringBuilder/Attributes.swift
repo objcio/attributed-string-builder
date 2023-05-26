@@ -13,6 +13,7 @@ public struct Attributes {
         size: CGFloat = 14,
         bold: Bool = false,
         italic: Bool = false,
+        monospace: Bool = false,
         textColor: NSColor = .textColor,
         backgroundColor: NSColor? = nil,
         kern: CGFloat = 0,
@@ -37,6 +38,7 @@ public struct Attributes {
         self.size = size
         self.bold = bold
         self.italic = italic
+        self.monospace = monospace
         self.textColor = textColor
         self.backgroundColor = backgroundColor
         self.kern = kern
@@ -60,6 +62,7 @@ public struct Attributes {
     public var size: CGFloat
     public var bold: Bool = false
     public var italic: Bool = false
+    public var monospace: Bool = false
     public var textColor: NSColor = .textColor
     public var backgroundColor: NSColor? = nil
     public var kern: CGFloat = 0
@@ -94,6 +97,7 @@ extension Attributes {
         var fontDescriptor = NSFontDescriptor(name: family, size: size)
 
         var traits = NSFontDescriptor.SymbolicTraits()
+        if monospace { traits.formUnion(.monoSpace) }
         if bold { traits.formUnion(.bold) }
         if italic { traits.formUnion(.italic )}
         if !traits.isEmpty { fontDescriptor = fontDescriptor.withSymbolicTraits(traits) }
