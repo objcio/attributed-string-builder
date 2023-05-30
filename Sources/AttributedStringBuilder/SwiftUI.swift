@@ -2,6 +2,7 @@ import Cocoa
 import SwiftUI
 
 extension AttributedStringConvertible {
+    /// Render a SwiftUI view as the background of this attributed string.
     public func background<Content: View>(@ViewBuilder content: () -> Content) -> some AttributedStringConvertible {
         let c = content()
         return modify(perform: {
@@ -40,13 +41,23 @@ struct DefaultEmbedProposal: EnvironmentKey {
 }
 
 extension EnvironmentValues {
+    /// The default proposal that's used for ``Embed``
     public var defaultProposal: ProposedViewSize {
         get { self[DefaultEmbedProposal.self] }
         set { self[DefaultEmbedProposal.self] = newValue }
     }
 }
 
+/// This takes a SwiftUI view and renders it to an image that's embedded into the resulting attributed string.
+///
+/// You can customize the default proposal through the ``defaultProposal`` property in the environment.
 public struct Embed<V: View>: AttributedStringConvertible {
+    /// Embed a SwiftUI view into an attributed string
+    /// - Parameters:
+    ///   - proposal: The size that's proposed to the view or `nil` if you want to have the default proposal (from the environment).
+    ///   - scale: The scale at which the view should be rendered
+    ///   - bitmap: Whether or not to embed the rendered image as a bitmap
+    ///   - view: The view
     public init(proposal: ProposedViewSize? = nil, scale: CGFloat = 1, bitmap: Bool = false, @ViewBuilder view: () -> V) {
         self.proposal = proposal
         self.view = view()

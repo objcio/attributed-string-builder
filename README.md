@@ -53,7 +53,14 @@ Here's [a larger sample](Sources/Tests/Tests.swift).
 
 ### Attributes
 
-The [Attributes](Sources/AttributedStringBuilder/Attributes.swift) struct is a value type representing the attributes in an `NSAttributedString`. During the building of the attributed string, this is passed on through the environment.
+The [Attributes](Sources/AttributedStringBuilder/Attributes.swift) struct is a value type representing the attributes in an `NSAttributedString`. During the building of the attributed string, this is passed on through the environment. For example, this is how you can build a simple attributed string using plain strings and `.modify`:
+
+```swift
+@AttributedStringBuilder var sample1: some AttributedStringConvertible {
+    "Hello"
+    "World".modify { $0.textColor = .red }
+}
+```
 
 ### Strings
 
@@ -61,7 +68,17 @@ You can turn any string directly into an attributed string. The attributes from 
 
 ### Markdown
 
-You can take any Markdown string and render it into an attributed string as well. For most customization, you can pass in a custom [stylesheet](Sources/AttributedStringBuilder/MarkdownStylesheet.swift).
+You can take any Markdown string and render it into an attributed string as well. For most customization, you can pass in a custom [stylesheet](Sources/AttributedStringBuilder/MarkdownStylesheet.swift). In the Markdown string literal, you can embed other values that convert to `AttributedStringConvertible`:
+
+```swift
+@AttributedStringBuilder var sample2: some AttributedStringConvertible {
+    Markdown("""
+    This is *Markdown* syntax.
+
+    With \("inline".modify { $0.underlineStyle = .single }) nesting.
+    """)
+}
+```
 
 ### Images
 
@@ -81,7 +98,7 @@ You can use the environment in a way similar to SwiftUI's Environment to pass va
 
 ### State
 
-Similar to the environment, you can also thread state through. This is useful (for example) to number footnotes.
+Similar to the environment, you can also thread state through. This is useful (for example) to number footnotes. While the modified environment is always passed to *children* of the current node, modified state is passed to the next nodes that are rendered.
 
 ## Swift Talk Episodes
 
