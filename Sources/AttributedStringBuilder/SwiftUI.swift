@@ -5,11 +5,17 @@ extension AttributedStringConvertible {
     /// Render a SwiftUI view as the background of this attributed string.
     public func background<Content: View>(@ViewBuilder content: () -> Content) -> some AttributedStringConvertible {
         let c = content()
-        return modify(perform: {
-            $0.backgroundView = AnyView(c.font(Font($0.computedFont)))
-        })
+        return EnvironmentReader(\.modifyEnv) { modifyEnv in
+            self.modify(perform: {
+                $0.backgroundView = AnyView(c
+                    .transformEnvironment(\.self, transform: modifyEnv)
+                    .font(Font($0.computedFont))
+                )
+            })
+        }
     }
 }
+
 
 extension View {
     func snapshot(proposal: ProposedViewSize) -> NSImage? {
@@ -33,6 +39,23 @@ extension View {
         let image = NSImage(size: bitmapRep.size)
         image.addRepresentation(bitmapRep)
         return image
+    }
+}
+
+struct ModifySwiftUIEnvironment: EnvironmentKey {
+    static var defaultValue: (inout SwiftUI.EnvironmentValues) -> () = { _ in () }
+}
+
+extension EnvironmentValues {
+    var modifyEnv: (inout SwiftUI.EnvironmentValues) -> () {
+        get { self[ModifySwiftUIEnvironment.self] }
+        set { self[ModifySwiftUIEnvironment.self] = newValue }
+    }
+}
+
+extension AttributedStringConvertible {
+    public func transformSwiftUIEnvironment(_ transform: @escaping (inout SwiftUI.EnvironmentValues) -> ()) -> some AttributedStringConvertible {
+        environment(\.modifyEnv, value: transform)
     }
 }
 
@@ -73,14 +96,16 @@ public struct Embed<V: View>: AttributedStringConvertible {
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         let proposal = self.proposal ?? context.environment.defaultProposal
+        let theView = view
+            .transformEnvironment(\.self, transform: context.environment.modifyEnv)
+            .font(SwiftUI.Font(context.environment.attributes.computedFont))
         if bitmap {
-            let i = view.snapshot(proposal: proposal)!
+            let i = theView.snapshot(proposal: proposal)!
             i.size.width *= scale
             i.size.height *= scale
             return i.attributedString(context: &context)
         } else {
-            let renderer = ImageRenderer(content: view
-                .font(SwiftUI.Font(context.environment.attributes.computedFont)))
+            let renderer = ImageRenderer(content: theView)
             renderer.proposedSize = proposal
             let _ = renderer.nsImage! // this is necessary to get the correct size in the .render closure, even for pdf
             let data = NSMutableData()

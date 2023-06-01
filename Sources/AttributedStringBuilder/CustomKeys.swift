@@ -41,7 +41,7 @@ extension Attributes {
     }
 
     // For now, this doesn't work correctly across multiple lines, it takes the complete bounding box and draws the background behind there.
-    public var backgroundView: AnyView? {
+    var backgroundView: AnyView? {
         get {
             customAttributes[NSAttributedString.Key.backgroundView.rawValue] as? AnyView
         }

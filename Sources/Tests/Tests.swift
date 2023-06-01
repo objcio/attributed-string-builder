@@ -2,9 +2,13 @@ import XCTest
 import SwiftUI
 import AttributedStringBuilder
 
-var backgroundGradient: some View {
-    RoundedRectangle(cornerRadius: 2)
-        .fill(LinearGradient(colors: [.green, .red], startPoint: .topLeading, endPoint: .bottomTrailing))
+struct BackgroundGradient: View {
+    @Environment(\.highlightColor) var highlightColor
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(LinearGradient(colors: [.green, highlightColor], startPoint: .topLeading, endPoint: .bottomTrailing))
+    }
 }
 
 @AttributedStringBuilder @MainActor
@@ -27,12 +31,22 @@ var example: some AttributedStringConvertible {
         """)
         }
         ". "
-        "Some more text"
-            .modify {
-                $0.backgroundView = AnyView(backgroundGradient)
+        let someMore = "Some more text"
+            .background {
+                BackgroundGradient()
             }
+        someMore
+        someMore
+            .transformSwiftUIEnvironment { $0.highlightColor = .red }
 
     }.joined(separator: "")
+    let gradient = Embed {
+        BackgroundGradient()
+            .frame(width: 50, height: 50)
+    }
+    Group {
+        gradient; gradient.transformSwiftUIEnvironment { $0.highlightColor = .red }
+    }.joined(separator: " ")
     Array(repeating:
     """
     This is some markdown with **strong** `code` text. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas tempus, tortor eu maximus gravida, ante diam fermentum magna, in gravida ex tellus ac purus.
@@ -98,6 +112,17 @@ var example: some AttributedStringConvertible {
 }
 
 let sampleAttributes = Attributes(family: "Georgia", size: 16, textColor: .black, paragraphSpacing: 10)
+
+struct HighlightColor: SwiftUI.EnvironmentKey {
+    static let defaultValue: Color = Color.blue
+}
+
+extension SwiftUI.EnvironmentValues {
+    var highlightColor: Color {
+        get { self[HighlightColor.self] }
+        set { self[HighlightColor.self] = newValue }
+    }
+}
 
 
 class Tests: XCTestCase {
