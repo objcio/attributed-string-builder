@@ -19,6 +19,7 @@ public struct Attributes {
         kern: CGFloat = 0,
         firstlineHeadIndent: CGFloat = 0,
         headIndent: CGFloat = 0,
+        tailIndent: CGFloat = 0,
         tabStops: [NSTextTab] = (1..<10).map {
             NSTextTab(textAlignment: .left,
                       location: CGFloat($0) * 2 * 16)            
@@ -44,6 +45,7 @@ public struct Attributes {
         self.kern = kern
         self.firstlineHeadIndent = firstlineHeadIndent
         self.headIndent = headIndent
+        self.tailIndent = tailIndent
         self.tabStops = tabStops
         self.alignment = alignment
         self.lineHeightMultiple = lineHeightMultiple
@@ -68,6 +70,7 @@ public struct Attributes {
     public var kern: CGFloat = 0
     public var firstlineHeadIndent: CGFloat = 0
     public var headIndent: CGFloat = 0
+    public var tailIndent: CGFloat = 0
     public var tabStops: [NSTextTab] = (1..<10).map { NSTextTab(textAlignment: .left, location: CGFloat($0) * 2 * 16) }
     public var alignment: NSTextAlignment = .left
     public var lineHeightMultiple: CGFloat = 1.3
@@ -109,6 +112,7 @@ extension Attributes {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.firstLineHeadIndent = firstlineHeadIndent
         paragraphStyle.headIndent = headIndent
+        paragraphStyle.tailIndent = tailIndent
         paragraphStyle.tabStops = tabStops
         paragraphStyle.alignment = alignment
         paragraphStyle.lineHeightMultiple = lineHeightMultiple
@@ -117,6 +121,17 @@ extension Attributes {
         paragraphStyle.paragraphSpacing = paragraphSpacing
         paragraphStyle.paragraphSpacingBefore = paragraphSpacingBefore
         return paragraphStyle
+    }
+
+    fileprivate var attachmentParagraphStyle: NSParagraphStyle {
+        let ps = NSMutableParagraphStyle()
+        ps.firstLineHeadIndent = firstlineHeadIndent
+        ps.headIndent = headIndent
+        ps.tailIndent = tailIndent
+        ps.alignment = alignment
+        ps.paragraphSpacing = paragraphSpacing
+        ps.paragraphSpacingBefore = paragraphSpacingBefore
+        return ps
     }
 
     /// Outputs a dictionary of the attributes that can be passed into an attributed string.
@@ -147,6 +162,10 @@ extension Attributes {
             result[NSAttributedString.Key(key)] = value
         }
         return result
+    }
+
+    public var attachmentAtts: [NSAttributedString.Key: Any] {
+        [.paragraphStyle: attachmentParagraphStyle]
     }
 }
 

@@ -44,6 +44,7 @@ struct AttributedStringWalker: MarkupWalker {
     }
 
     let stylesheet: Stylesheet
+    var listLevel = 0
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
     var highlightCode: ((Code) -> any AttributedStringConvertible)? {
@@ -180,13 +181,14 @@ struct AttributedStringWalker: MarkupWalker {
         let original = attributes
         defer { attributes = original }
 
-        stylesheet.list(attributes: &attributes)
+        stylesheet.list(attributes: &attributes, level: listLevel)
+        listLevel += 1
+        defer { listLevel -= 1 }
 
         let isOrdered = list is OrderedList
         let startIndex = Int((list as? OrderedList)?.startIndex ?? 1)
 
-        attributes.firstlineHeadIndent = attributes.headIndent
-        attributes.headIndent += attributes.tabStops[1].location
+        attributes.headIndent = attributes.tabStops[1].location
 
         for (item, number) in zip(list.listItems, startIndex...) {
             // Append list item prefix

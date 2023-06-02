@@ -17,7 +17,7 @@ public protocol Stylesheet {
     func link(attributes: inout Attributes)
     func heading(level: Int, attributes: inout Attributes)
     func listItem(attributes: inout Attributes, checkbox: Bool?)
-    func list(attributes: inout Attributes)
+    func list(attributes: inout Attributes, level: Int)
     func orderedListItemPrefix(number: Int) -> String
     func orderedListItemPrefix(attributes: inout Attributes)
     var unorderedListItemPrefix: String { get }
@@ -44,8 +44,8 @@ extension Stylesheet {
 
     public func blockQuote(attributes: inout Attributes) {
         attributes.italic = true
-        attributes.firstlineHeadIndent = 20
-        attributes.headIndent = 20
+        attributes.firstlineHeadIndent += 20
+        attributes.headIndent += 20
     }
 
     public func listItem(attributes: inout Attributes, checkbox: Bool?) {
@@ -54,7 +54,7 @@ extension Stylesheet {
         }
     }
 
-    public func list(attributes: inout Attributes) {
+    public func list(attributes: inout Attributes, level: Int) {
     }
 
     public func orderedListItemPrefix(number: Int) -> String {

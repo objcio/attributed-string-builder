@@ -62,14 +62,15 @@ public struct Embed<V: View>: AttributedStringConvertible {
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         let proposal = self.proposal ?? context.environment.defaultProposal
+        let v = view
+            .font(SwiftUI.Font(context.environment.attributes.computedFont))
         if bitmap {
-            let i = view.snapshot(proposal: proposal)!
+            let i = v.snapshot(proposal: proposal)!
             i.size.width *= scale
             i.size.height *= scale
             return i.attributedString(context: &context)
         } else {
-            let renderer = ImageRenderer(content: view
-                .font(SwiftUI.Font(context.environment.attributes.computedFont)))
+            let renderer = ImageRenderer(content: v)
             renderer.proposedSize = proposal
             let _ = renderer.nsImage! // this is necessary to get the correct size in the .render closure, even for pdf
             let data = NSMutableData()
