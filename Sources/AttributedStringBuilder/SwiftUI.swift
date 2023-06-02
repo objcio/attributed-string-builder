@@ -2,13 +2,20 @@ import Cocoa
 import SwiftUI
 
 extension AttributedStringConvertible {
+    /// Render a SwiftUI view as the background of this attributed string.
     public func background<Content: View>(@ViewBuilder content: () -> Content) -> some AttributedStringConvertible {
         let c = content()
-        return modify(perform: {
-            $0.backgroundView = AnyView(c.font(Font($0.computedFont)))
-        })
+        return EnvironmentReader(\.modifyEnv) { modifyEnv in
+            self.modify(perform: {
+                $0.backgroundView = AnyView(c
+                    .transformEnvironment(\.self, transform: modifyEnv)
+                    .font(Font($0.computedFont))
+                )
+            })
+        }
     }
 }
+
 
 extension View {
     func snapshot(proposal: ProposedViewSize) -> NSImage? {
@@ -35,18 +42,45 @@ extension View {
     }
 }
 
+struct ModifySwiftUIEnvironment: EnvironmentKey {
+    static var defaultValue: (inout SwiftUI.EnvironmentValues) -> () = { _ in () }
+}
+
+extension EnvironmentValues {
+    var modifyEnv: (inout SwiftUI.EnvironmentValues) -> () {
+        get { self[ModifySwiftUIEnvironment.self] }
+        set { self[ModifySwiftUIEnvironment.self] = newValue }
+    }
+}
+
+extension AttributedStringConvertible {
+    public func transformSwiftUIEnvironment(_ transform: @escaping (inout SwiftUI.EnvironmentValues) -> ()) -> some AttributedStringConvertible {
+        environment(\.modifyEnv, value: transform)
+    }
+}
+
 struct DefaultEmbedProposal: EnvironmentKey {
     static let defaultValue: ProposedViewSize = .unspecified
 }
 
 extension EnvironmentValues {
+    /// The default proposal that's used for ``Embed``
     public var defaultProposal: ProposedViewSize {
         get { self[DefaultEmbedProposal.self] }
         set { self[DefaultEmbedProposal.self] = newValue }
     }
 }
 
+/// This takes a SwiftUI view and renders it to an image that's embedded into the resulting attributed string.
+///
+/// You can customize the default proposal through the ``defaultProposal`` property in the environment.
 public struct Embed<V: View>: AttributedStringConvertible {
+    /// Embed a SwiftUI view into an attributed string
+    /// - Parameters:
+    ///   - proposal: The size that's proposed to the view or `nil` if you want to have the default proposal (from the environment).
+    ///   - scale: The scale at which the view should be rendered
+    ///   - bitmap: Whether or not to embed the rendered image as a bitmap
+    ///   - view: The view
     public init(proposal: ProposedViewSize? = nil, scale: CGFloat = 1, bitmap: Bool = false, @ViewBuilder view: () -> V) {
         self.proposal = proposal
         self.view = view()
@@ -62,15 +96,16 @@ public struct Embed<V: View>: AttributedStringConvertible {
     @MainActor
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         let proposal = self.proposal ?? context.environment.defaultProposal
-        let v = view
+        let theView = view
+            .transformEnvironment(\.self, transform: context.environment.modifyEnv)
             .font(SwiftUI.Font(context.environment.attributes.computedFont))
         if bitmap {
-            let i = v.snapshot(proposal: proposal)!
+            let i = theView.snapshot(proposal: proposal)!
             i.size.width *= scale
             i.size.height *= scale
             return i.attributedString(context: &context)
         } else {
-            let renderer = ImageRenderer(content: v)
+            let renderer = ImageRenderer(content: theView)
             renderer.proposedSize = proposal
             let _ = renderer.nsImage! // this is necessary to get the correct size in the .render closure, even for pdf
             let data = NSMutableData()
