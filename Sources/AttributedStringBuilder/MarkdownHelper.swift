@@ -152,8 +152,7 @@ struct AttributedStringWalker: MarkupWalker {
         let original = attributes
         defer { attributes = original }
 
-        stylesheet.link(attributes: &attributes)
-        attributes.link = link.destination.flatMap(URL.init(string:))
+        stylesheet.link(attributes: &attributes, destination: link.destination ?? "")
 
         for child in link.children {
             visit(child)

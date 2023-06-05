@@ -14,7 +14,7 @@ public protocol Stylesheet {
     func inlineCode(attributes: inout Attributes)
     func codeBlock(attributes: inout Attributes)
     func blockQuote(attributes: inout Attributes)
-    func link(attributes: inout Attributes)
+    func link(attributes: inout Attributes, destination: String)
     func heading(level: Int, attributes: inout Attributes)
     func headingLink(path: [String], attributes: inout Attributes)
     func listItem(attributes: inout Attributes, checkbox: Bool?)
@@ -39,8 +39,11 @@ extension Stylesheet {
         attributes.bold = true
     }
 
-    public func link(attributes: inout Attributes) {
+    public func link(attributes: inout Attributes, destination: String) {
         attributes.textColor = .blue
+        if let u = URL(string: destination) {
+            attributes.link = u
+        }
     }
 
     public func blockQuote(attributes: inout Attributes) {
