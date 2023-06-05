@@ -16,6 +16,7 @@ public protocol Stylesheet {
     func blockQuote(attributes: inout Attributes)
     func link(attributes: inout Attributes)
     func heading(level: Int, attributes: inout Attributes)
+    func headingLink(path: [String], attributes: inout Attributes)
     func listItem(attributes: inout Attributes, checkbox: Bool?)
     func list(attributes: inout Attributes, level: Int)
     func orderedListItemPrefix(number: Int) -> String
@@ -110,5 +111,8 @@ extension Stylesheet {
         case 3: attributes.size = 28
         default: ()
         }
+    }
+
+    public func headingLink(path: [String], attributes: inout Attributes) {        
     }
 }

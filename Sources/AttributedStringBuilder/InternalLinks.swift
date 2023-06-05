@@ -7,14 +7,18 @@ extension NSAttributedString.Key {
 
 extension AttributedStringConvertible {
     public func internalName<N: RawRepresentable>(name: N) -> some AttributedStringConvertible where N.RawValue == String {
-        self.modify {
-            $0.customAttributes[NSAttributedString.Key.internalName.rawValue] = name.rawValue
-        }
+        modify { $0.setInternalName(name: name) }
     }
 
     public func internalLink<N: RawRepresentable>(name: N) -> some AttributedStringConvertible where N.RawValue == String {
         self.modify {
             $0.customAttributes[NSAttributedString.Key.internalLink.rawValue] = name.rawValue
         }
+    }
+}
+
+extension Attributes {
+    mutating public func setInternalName<N: RawRepresentable>(name: N) {
+        customAttributes[NSAttributedString.Key.internalName.rawValue] = name.rawValue
     }
 }

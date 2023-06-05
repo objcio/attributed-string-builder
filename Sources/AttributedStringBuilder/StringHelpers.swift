@@ -4,6 +4,7 @@ import Foundation
 
 extension String {
     func trim(_ range: inout Range<String.Index>) {
+        guard !range.isEmpty else { return }
         var lower = range.lowerBound
         var upper = index(before: range.upperBound)
         guard lower < upper else {

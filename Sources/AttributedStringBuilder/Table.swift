@@ -58,11 +58,13 @@ public struct TableRow {
 public struct TableCell {
     public init(
         width: Table.Width? = nil,
+        height: Table.Width? = nil,
         borderColor: NSColor = .black,
         borderWidth: WidthValue = 0,
         padding: WidthValue = 0,
         margin: WidthValue = 0,
         alignment: NSTextAlignment = .left,
+        verticalAlignment: NSTextBlock.VerticalAlignment = .topAlignment,
         contents: AttributedStringConvertible) {
         self.borderColor = borderColor
         self.borderWidth = borderWidth
@@ -70,7 +72,9 @@ public struct TableCell {
         self.margin = margin
         self.contents = contents
         self.width = width
+        self.height = height
         self.alignment = alignment
+        self.verticalAlignment = verticalAlignment
     }
 
     public var borderColor: NSColor = .black
@@ -79,7 +83,9 @@ public struct TableCell {
     public var margin: WidthValue = 0
     public var contents: AttributedStringConvertible
     public var width: Table.Width?
+    public var height: Table.Width? = nil
     public var alignment: NSTextAlignment = .left
+    public var verticalAlignment: NSTextBlock.VerticalAlignment
 
     @MainActor
     func render(block: NSTextTableBlock, context: inout Context, result: NSMutableAttributedString) {
@@ -93,6 +99,10 @@ public struct TableCell {
         for (edge, value) in margin.allEdges {
             block.setWidth(value.value, type: value.type, for: .margin, edge: edge)
         }
+        if let h = height {
+            block.setValue(h.value, type: h.type, for: .height)
+        }
+        block.verticalAlignment = verticalAlignment
 
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = alignment

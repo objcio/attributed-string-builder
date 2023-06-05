@@ -45,6 +45,7 @@ struct AttributedStringWalker: MarkupWalker {
 
     let stylesheet: Stylesheet
     var listLevel = 0
+    var headingPath: [String] = []
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
     var highlightCode: ((Code) -> any AttributedStringConvertible)? {
@@ -162,6 +163,16 @@ struct AttributedStringWalker: MarkupWalker {
     mutating func visitHeading(_ heading: Heading) -> () {
         let original = attributes
         defer { attributes = original }
+        let l = heading.level-1
+        if headingPath.count > l {
+            headingPath.removeSubrange(l...)
+        }
+        if headingPath.count < l {
+            headingPath.append(contentsOf: Array(repeating: "", count: l-headingPath.count))
+        }
+        headingPath.append(heading.plainText)
+        stylesheet.headingLink(path: headingPath, attributes: &attributes)
+
         stylesheet.heading(level: heading.level, attributes: &attributes)
         attributes.heading(title: heading.plainText, level: heading.level)
         for child in heading.children {
