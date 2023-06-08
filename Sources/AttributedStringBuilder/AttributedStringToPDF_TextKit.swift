@@ -46,7 +46,7 @@ extension NSAttributedString {
     public func fancyPDF(
         pageSize: CGSize = .a4,
         pageMargin: @escaping (_ pageNumber: Int) -> NSEdgeInsets = { _ in NSEdgeInsets(top: .pointsPerInch/2, left: .pointsPerInch/2, bottom: .pointsPerInch/2, right: .pointsPerInch/2)},
-        header: Accessory? = nil,
+        header: ((Int) -> Accessory)? = nil,
         footer: Accessory? = nil,
         annotationsPadding: NSEdgeInsets = .init(),
         highlightWarnings: Bool = false
@@ -109,7 +109,7 @@ class PDFRenderer {
 
     private var pageSize: CGSize
     private var pageMargin: (_ pageNumber: Int) -> NSEdgeInsets
-    private var header: Accessory?
+    private var header: ((Int) -> Accessory)?
     private var footer: Accessory?
     private var annotationsPadding: NSEdgeInsets
     private var highlightWarnings: Bool
@@ -128,7 +128,7 @@ class PDFRenderer {
         pageSize: CGSize,
         pageMargin: @escaping (_ pageNumber: Int) -> NSEdgeInsets,
         string: NSAttributedString,
-        header: Accessory? = nil,
+        header: ((Int) -> Accessory)? = nil,
         footer: Accessory? = nil,
         annotationsPadding: NSEdgeInsets = .init(),
         highlightWarnings: Bool = false
@@ -273,7 +273,7 @@ class PDFRenderer {
             let pageAnnotationsBefore = bookTextStorage.annotations(in: pageCharacterRange)
 
             // Add header container
-            let pageHeaderInfo = accessoryInfo(accessory: header)
+            let pageHeaderInfo = accessoryInfo(accessory: header?(pages.count))
             // Add annotations if any
             var annotationsInfo = annotationsAccessoryInfo(pageContentContainer: pageContentContainer)
 
@@ -386,7 +386,7 @@ class PDFRenderer {
                 var origin = page.frameRect.origin
 
                 // Draw header
-                if let header = self.header, let headerInfoContainers = page.header?.containers {
+                if let header = self.header?(pageNo), let headerInfoContainers = page.header?.containers {
                     origin.y += header.padding.top
                     origin = _draw(containers: headerInfoContainers, startAt: origin)
                     origin.y -= header.padding.top
