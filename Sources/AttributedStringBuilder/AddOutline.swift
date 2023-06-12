@@ -71,7 +71,8 @@ extension PDFDocument {
     public func addLinks(namedParts: [NamedPart], links: [MyLink]) {
         for l in links {
             guard let dest = namedParts.first(where: { $0.name == l.name }) else {
-                fatalError("No destination named: \(l.name)")
+                print("No destination named: \(l.name)")
+                return
             }
             let sourcePage = page(at: l.pageNumber)!
             let page = page(at: dest.pageNumber)!
