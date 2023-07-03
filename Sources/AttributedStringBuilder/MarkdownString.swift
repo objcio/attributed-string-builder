@@ -2,14 +2,14 @@
 
 import Foundation
 
-enum Piece {
+public enum Piece {
     case raw(String)
     case component(any AttributedStringConvertible)
 }
 
 // This is a string-like type that allows for interpolation of custom segments that conform to AttributedStringConvertible.
 public struct MarkdownString: ExpressibleByStringInterpolation {
-    var pieces: [Piece] = []
+    public var pieces: [Piece] = []
 
     public init(stringLiteral value: String) {
         pieces = [.raw(value)]
@@ -17,6 +17,10 @@ public struct MarkdownString: ExpressibleByStringInterpolation {
 
     public init(stringInterpolation: Interpolation) {
         pieces = stringInterpolation.pieces
+    }
+    
+    public init(pieces: [Piece]) {
+        self.pieces = pieces
     }
 
     public struct Interpolation: StringInterpolationProtocol {
