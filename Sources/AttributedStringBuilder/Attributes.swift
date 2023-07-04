@@ -104,7 +104,10 @@ extension Attributes {
         if bold { traits.formUnion(.bold) }
         if italic { traits.formUnion(.italic )}
         if !traits.isEmpty { fontDescriptor = fontDescriptor.withSymbolicTraits(traits) }
-        let font = NSFont(descriptor: fontDescriptor, size: size)!
+        guard let font = NSFont(descriptor: fontDescriptor, size: size) else {
+            print("Font creation with traits failed: \(traits). Fallback to named font.")
+            return NSFont(name: family, size: size) ?? .systemFont(ofSize: size)
+        }
         return font
     }
 
