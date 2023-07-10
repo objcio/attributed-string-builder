@@ -5,6 +5,7 @@
 //  Created by Juul Spee on 08/07/2022.
 
 import AppKit
+import SwiftUI
 
 /// Attributes for `NSAttributedString`, wrapped in a struct for convenience.
 public struct Attributes {
@@ -34,7 +35,8 @@ public struct Attributes {
         cursor: NSCursor? = nil,
         underlineColor: NSColor? = nil,
         underlineStyle: NSUnderlineStyle? = nil,
-        suppressHeader: Bool = false) {
+        suppressHeader: Bool = false,
+        preferredEmbedColorScheme: ColorScheme? = nil) {
         self.family = family
         self.size = size
         self.bold = bold
@@ -58,6 +60,7 @@ public struct Attributes {
         self.underlineColor = underlineColor
         self.underlineStyle = underlineStyle
         self.suppressHeader = suppressHeader
+        self.preferredEmbedColorScheme = preferredEmbedColorScheme
     }
 
     public var family: String
@@ -84,6 +87,7 @@ public struct Attributes {
     public var underlineStyle: NSUnderlineStyle?
 //    public var suppressHeading: Bool?
     public var customAttributes: [String: Any] = [:]
+    public var preferredEmbedColorScheme: ColorScheme? = nil
 }
 
 extension Attributes {

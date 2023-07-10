@@ -97,6 +97,7 @@ public struct Embed<V: View>: AttributedStringConvertible {
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         let proposal = self.proposal ?? context.environment.defaultProposal
         let theView = view
+            .preferredColorScheme(context.environment.attributes.preferredEmbedColorScheme)
             .transformEnvironment(\.self, transform: context.environment.modifyEnv)
             .font(SwiftUI.Font(context.environment.attributes.computedFont))
         if bitmap {
