@@ -72,7 +72,7 @@ extension PDFDocument {
         for l in links {
             guard let dest = namedParts.first(where: { $0.name == l.name }) else {
                 print("No destination named: \(l.name)")
-                return
+                continue
             }
             let sourcePage = page(at: l.pageNumber)!
             let page = page(at: dest.pageNumber)!
