@@ -1,10 +1,10 @@
 import AppKit
 
-struct Modify: AttributedStringConvertible {
+public struct Modify: AttributedStringConvertible {
     var modify: (inout Attributes) -> ()
-    var contents: AttributedStringConvertible
+    public var contents: AttributedStringConvertible
 
-    func attributedString(context: inout Context) -> [NSAttributedString] {
+    public func attributedString(context: inout Context) -> [NSAttributedString] {
         let old = context.environment.attributes
         defer { context.environment.attributes = old }
         modify(&context.environment.attributes)
