@@ -111,7 +111,7 @@ extension Attributes {
         return font
     }
 
-    fileprivate var paragraphStyle: NSParagraphStyle {
+    public var paragraphStyle: NSParagraphStyle {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.firstLineHeadIndent = firstlineHeadIndent
         paragraphStyle.headIndent = headIndent
