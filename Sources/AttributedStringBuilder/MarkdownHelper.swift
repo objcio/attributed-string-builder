@@ -24,6 +24,25 @@ extension EnvironmentValues {
     }
 }
 
+struct Rewriters: EnvironmentKey {
+    static var defaultValue: [any MarkupRewriter] = []
+}
+
+extension EnvironmentValues {
+    var rewriters: [any MarkupRewriter] {
+        get { self[Rewriters.self] }
+        set { self[Rewriters.self] = newValue }
+    }
+}
+
+extension AttributedStringConvertible {
+    public func rewriter(_ r: any MarkupRewriter) -> some AttributedStringConvertible {
+        transformEnvironment(\.rewriters, transform: {
+            $0.append(r)
+        })
+    }
+}
+
 public struct Code: Hashable, Codable {
     public init(language: String? = nil, code: String) {
         self.language = language
@@ -291,12 +310,15 @@ extension Checkbox {
 fileprivate struct MarkdownHelper: AttributedStringConvertible {
     var segments: [any AttributedStringConvertible]
     var document: Document
+    var rewriters: [any MarkupRewriter]
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
     func attributedString(context: inout Context) -> [NSAttributedString] {
+        var copy = document
+        copy.rewrite(rewriters)
         var walker = AttributedStringWalker(interpolationSegments: segments, context: context, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
-        walker.visit(document)
+        walker.visit(copy)
         context.state = walker.context.state
         return [walker.attributedString]
     }
@@ -310,13 +332,26 @@ public struct Markdown: AttributedStringConvertible {
 
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         EnvironmentReader(\.markdownStylesheet) { stylesheet in
-                MarkdownHelper(string: source, stylesheet: stylesheet)
+            EnvironmentReader(\.rewriters) { rewriters in
+                MarkdownHelper(string: source, stylesheet: stylesheet, rewriters: rewriters)
+            }
         }.attributedString(context: &context)
     }
 }
 
+extension Document {
+    mutating func rewrite(_ rewriters: [any MarkupRewriter]) {
+        for var r in rewriters.reversed() {
+            guard let d = r.visit(self) as? Document else {
+                fatalError()
+            }
+            self = d
+        }
+    }
+}
+
 extension MarkdownHelper {
-    init(string: MarkdownString, stylesheet: any Stylesheet)  {
+    init(string: MarkdownString, stylesheet: any Stylesheet, rewriters: [any MarkupRewriter])  {
         var components: [any AttributedStringConvertible] = []
         let str = string.pieces.map {
             switch $0 {
@@ -328,13 +363,15 @@ extension MarkdownHelper {
         }.joined(separator: "")
         self.segments = components
         self.document = Document(parsing: str, options: .parseSymbolLinks)
+        self.rewriters = rewriters
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
     }
 
-    init(verbatim: String, stylesheet: any Stylesheet) {
+    init(verbatim: String, stylesheet: any Stylesheet, rewriters: [any MarkupRewriter]) {
         self.segments = []
         self.document = Document(parsing: verbatim, options: .parseSymbolLinks)
+        self.rewriters = rewriters
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
     }
@@ -353,12 +390,16 @@ extension EnvironmentValues {
 
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default, highlightCode: ((Code) -> NSAttributedString)? = nil) -> some AttributedStringConvertible {
-        MarkdownHelper(verbatim: self, stylesheet: stylesheet)
+        EnvironmentReader(\.rewriters) { r in
+            MarkdownHelper(verbatim: self, stylesheet: stylesheet, rewriters: r)
+        }
     }
 }
 
 extension Document {
     public func markdown(stylesheet: any Stylesheet = .default, makeCheckboxURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
-        MarkdownHelper(segments: [], document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        EnvironmentReader(\.rewriters) { r in
+            MarkdownHelper(segments: [], document: self, rewriters: r, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        }
     }
 }

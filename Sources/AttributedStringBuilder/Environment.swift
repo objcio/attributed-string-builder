@@ -55,4 +55,8 @@ extension AttributedStringConvertible {
     public func environment<Value>(_ keyPath: WritableKeyPath<EnvironmentValues, Value>, value: Value) -> some AttributedStringConvertible {
         EnvironmentModifier(keyPath: keyPath, modify: { $0 = value }, content: self)
     }
+
+    public func transformEnvironment<Value>(_ keyPath: WritableKeyPath<EnvironmentValues, Value>, transform: @escaping (inout Value) -> ()) -> some AttributedStringConvertible {
+        EnvironmentModifier(keyPath: keyPath, modify: transform, content: self)
+    }
 }

@@ -1,5 +1,6 @@
 import AttributedStringBuilder
 import XCTest
+import Markdown
 
 @MainActor
 class MarkdownTests: XCTestCase {
@@ -56,5 +57,27 @@ class MarkdownTests: XCTestCase {
 
 //        let str = "<ul><li>Two<ul><li>Three</li><li>Four</li></ul><li></ul>"
 //        print(NSAttributedString(html: str.data(using: .utf8)!, documentAttributes: nil)?.string)
+    }
+
+    func testRewriting() {
+        var context = Context(environment: .init())
+        let markdown = """
+            Hello [World](https://www.objc.io)
+            """
+        let attrStr = markdown.markdown()
+            .rewriter(MyRewriter())
+            .run(context: &context)
+        let expectation = """
+            Hello xWorldy
+            """
+        XCTAssertEqual(attrStr.string, expectation)
+    }
+}
+
+struct MyRewriter: MarkupRewriter {
+    var count = 0
+    func visitLink(_ link: Link) -> Markup? {
+        let children = [Text("x")] + link.inlineChildren.compactMap { $0 as? RecurringInlineMarkup } + [Text("y")]
+        return Link(destination: link.destination, children)
     }
 }
