@@ -390,11 +390,14 @@ class PDFRenderer {
             do {
                 var origin = page.frameRect.origin
 
+                var headerHeight: CGFloat = 0
                 // Draw header
                 if let header = self.header?(pageNo), let headerInfoContainers = page.header?.containers {
-                    origin.y += header.padding.top
+                    let padding = header.padding.top
+                    origin.y += padding
                     origin = _draw(containers: headerInfoContainers, startAt: origin)
-                    origin.y -= header.padding.top
+                    origin.y -= padding
+                    headerHeight = origin.y-page.frameRect.origin.y
                 }
 
                 // Compute the local position within the page for the range
@@ -416,7 +419,7 @@ class PDFRenderer {
                         renderer.render(rasterizationScale: 1) { size, render in
                             context.saveGState()
                             context.concatenate(.init(scaleX: 1, y: -1))
-                            context.translateBy(x: 0, y: -pageRect.height)
+                            context.translateBy(x: 0, y: -pageRect.height - headerHeight)
                             context.translateBy(x: b.minX, y: b.minY)
                             render(context)
                             context.restoreGState()
