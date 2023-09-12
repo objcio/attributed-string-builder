@@ -363,25 +363,27 @@ class PDFRenderer {
 
             let range = bookLayoutManager.glyphRange(for: container)
             let location = range.location + range.length/2
-            let attributes = bookTextStorage.attributes(at: location, effectiveRange: nil)
-            if let pageBackground = attributes[.pageBackground] as? NSColor {
-                context.saveGState()
-                context.setFillColor(pageBackground.cgColor)
-                context.fill(pageRect)
-                context.restoreGState()
-            }
-
-            if let backgroundView = attributes[.pageBackgroundView] as? AnyView {
-                let renderer = ImageRenderer(content: backgroundView)
-                renderer.proposedSize = ProposedViewSize(pageRect.size)
-                context.concatenate(.init(scaleX: 1, y: -1))
-                context.translateBy(x: 0, y: -pageRect.height)
-                renderer.render { size, renderer in
-                    renderer(context)
+            if location < bookTextStorage.length {
+                let attributes = bookTextStorage.attributes(at: location, effectiveRange: nil)
+                if let pageBackground = attributes[.pageBackground] as? NSColor {
+                    context.saveGState()
+                    context.setFillColor(pageBackground.cgColor)
+                    context.fill(pageRect)
+                    context.restoreGState()
                 }
-                // This manually restores the context, because saveGState/restoreGState didn't work here
-                context.translateBy(x: 0, y: pageRect.height)
-                context.concatenate(.init(scaleX: 1, y: -1))
+                
+                if let backgroundView = attributes[.pageBackgroundView] as? AnyView {
+                    let renderer = ImageRenderer(content: backgroundView)
+                    renderer.proposedSize = ProposedViewSize(pageRect.size)
+                    context.concatenate(.init(scaleX: 1, y: -1))
+                    context.translateBy(x: 0, y: -pageRect.height)
+                    renderer.render { size, renderer in
+                        renderer(context)
+                    }
+                    // This manually restores the context, because saveGState/restoreGState didn't work here
+                    context.translateBy(x: 0, y: pageRect.height)
+                    context.concatenate(.init(scaleX: 1, y: -1))
+                }
             }
 
             // Draw header and content top bottom
