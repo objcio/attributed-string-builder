@@ -93,6 +93,7 @@ class MarkdownTests: XCTestCase {
         XCTAssertEqual(attrStr.string, expectation)
         let atts = attrStr.attributes(at: 13, effectiveRange: nil)
         XCTAssertEqual(atts[.foregroundColor] as? NSColor, NSColor.red)
+        XCTAssertEqual(atts[.link] as? URL, nil)
     }
 }
 

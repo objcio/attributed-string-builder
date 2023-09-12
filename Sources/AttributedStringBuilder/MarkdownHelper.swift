@@ -197,10 +197,10 @@ struct AttributedStringWalker: MarkupWalker {
 
         if let c = customLinkVisitor {
             let linkText = attributedStringStack.popLast()!
+            attributes = original
             for part in c(link, linkText).attributedString(context: &context) {
                 attributedString.append(part)
             }
-        } else {
         }
     }
 
