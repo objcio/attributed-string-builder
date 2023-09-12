@@ -35,6 +35,17 @@ extension EnvironmentValues {
     }
 }
 
+struct CustomLinkRewriter: EnvironmentKey {
+    static var defaultValue: ((Link, NSAttributedString) -> any AttributedStringConvertible)? = nil
+}
+
+extension EnvironmentValues {
+    @_spi(Internal) public var linkRewriter: ((Link, NSAttributedString) -> any AttributedStringConvertible)? {
+        get { self[CustomLinkRewriter.self] }
+        set { self[CustomLinkRewriter.self] = newValue }
+    }
+}
+
 extension AttributedStringConvertible {
     public func rewriter(_ r: any MarkupRewriter) -> some AttributedStringConvertible {
         transformEnvironment(\.rewriters, transform: {
@@ -71,7 +82,12 @@ struct AttributedStringWalker: MarkupWalker {
         context.environment.highlightCode
     }
 
-    var attributedString = NSMutableAttributedString()
+    var attributedStringStack: [NSMutableAttributedString] = [NSMutableAttributedString()]
+    var attributedString: NSMutableAttributedString {
+        get { attributedStringStack[attributedStringStack.endIndex-1] }
+    }
+
+    var customLinkVisitor: ((Link, NSAttributedString) -> any AttributedStringConvertible)?
 
     mutating func visitDocument(_ document: Document) -> () {
         for block in document.blockChildren {
@@ -172,9 +188,19 @@ struct AttributedStringWalker: MarkupWalker {
         defer { attributes = original }
 
         stylesheet.link(attributes: &attributes, destination: link.destination ?? "")
-
+        if let c = customLinkVisitor {
+            attributedStringStack.append(NSMutableAttributedString())
+        }
         for child in link.children {
             visit(child)
+        }
+
+        if let c = customLinkVisitor {
+            let linkText = attributedStringStack.popLast()!
+            for part in c(link, linkText).attributedString(context: &context) {
+                attributedString.append(part)
+            }
+        } else {
         }
     }
 
@@ -310,14 +336,15 @@ extension Checkbox {
 fileprivate struct MarkdownHelper: AttributedStringConvertible {
     var segments: [any AttributedStringConvertible]
     var document: Document
-    var rewriters: [any MarkupRewriter]
     var stylesheet: any Stylesheet
     var makeCheckboxURL: ((ListItem) -> URL?)?
 
     func attributedString(context: inout Context) -> [NSAttributedString] {
         var copy = document
+        let rewriters = context.environment.rewriters
         copy.rewrite(rewriters)
-        var walker = AttributedStringWalker(interpolationSegments: segments, context: context, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
+        let linkRewriter = context.environment.linkRewriter
+        var walker = AttributedStringWalker(interpolationSegments: segments, context: context, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL, customLinkVisitor: linkRewriter)
         walker.visit(copy)
         context.state = walker.context.state
         return [walker.attributedString]
@@ -332,9 +359,7 @@ public struct Markdown: AttributedStringConvertible {
 
     public func attributedString(context: inout Context) -> [NSAttributedString] {
         EnvironmentReader(\.markdownStylesheet) { stylesheet in
-            EnvironmentReader(\.rewriters) { rewriters in
-                MarkdownHelper(string: source, stylesheet: stylesheet, rewriters: rewriters)
-            }
+            MarkdownHelper(string: source, stylesheet: stylesheet)
         }.attributedString(context: &context)
     }
 }
@@ -351,7 +376,7 @@ extension Document {
 }
 
 extension MarkdownHelper {
-    init(string: MarkdownString, stylesheet: any Stylesheet, rewriters: [any MarkupRewriter])  {
+    init(string: MarkdownString, stylesheet: any Stylesheet)  {
         var components: [any AttributedStringConvertible] = []
         let str = string.pieces.map {
             switch $0 {
@@ -363,15 +388,13 @@ extension MarkdownHelper {
         }.joined(separator: "")
         self.segments = components
         self.document = Document(parsing: str, options: .parseSymbolLinks)
-        self.rewriters = rewriters
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
     }
 
-    init(verbatim: String, stylesheet: any Stylesheet, rewriters: [any MarkupRewriter]) {
+    init(verbatim: String, stylesheet: any Stylesheet) {
         self.segments = []
         self.document = Document(parsing: verbatim, options: .parseSymbolLinks)
-        self.rewriters = rewriters
         self.stylesheet = stylesheet
         self.makeCheckboxURL = nil
     }
@@ -390,16 +413,12 @@ extension EnvironmentValues {
 
 extension String {
     public func markdown(stylesheet: any Stylesheet = .default, highlightCode: ((Code) -> NSAttributedString)? = nil) -> some AttributedStringConvertible {
-        EnvironmentReader(\.rewriters) { r in
-            MarkdownHelper(verbatim: self, stylesheet: stylesheet, rewriters: r)
-        }
+        MarkdownHelper(verbatim: self, stylesheet: stylesheet)
     }
 }
 
 extension Document {
     public func markdown(stylesheet: any Stylesheet = .default, makeCheckboxURL: ((ListItem) -> URL?)? = nil) -> some AttributedStringConvertible {
-        EnvironmentReader(\.rewriters) { r in
-            MarkdownHelper(segments: [], document: self, rewriters: r, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
-        }
+        MarkdownHelper(segments: [], document: self, stylesheet: stylesheet, makeCheckboxURL: makeCheckboxURL)
     }
 }

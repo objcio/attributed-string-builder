@@ -1,4 +1,4 @@
-import AttributedStringBuilder
+@_spi(Internal) import AttributedStringBuilder
 import XCTest
 import Markdown
 
@@ -19,7 +19,7 @@ class MarkdownTests: XCTestCase {
         """
         XCTAssertEqual(attrStr.string, expectation)
     }
-
+    
     func testOrderedList() async {
         var context = Context(environment: .init())
         let markdown = """
@@ -35,7 +35,7 @@ class MarkdownTests: XCTestCase {
         """
         XCTAssertEqual(attrStr.string, expectation)
     }
-
+    
     func testIndentedList() {
         var context = Context(environment: .init())
         let markdown = Markdown("""
@@ -54,11 +54,11 @@ class MarkdownTests: XCTestCase {
         \t•\tFive
         """
         XCTAssertEqual(attrStr.string, expectation)
-
-//        let str = "<ul><li>Two<ul><li>Three</li><li>Four</li></ul><li></ul>"
-//        print(NSAttributedString(html: str.data(using: .utf8)!, documentAttributes: nil)?.string)
+        
+        //        let str = "<ul><li>Two<ul><li>Three</li><li>Four</li></ul><li></ul>"
+        //        print(NSAttributedString(html: str.data(using: .utf8)!, documentAttributes: nil)?.string)
     }
-
+    
     func testRewriting() {
         var context = Context(environment: .init())
         let markdown = """
@@ -71,6 +71,28 @@ class MarkdownTests: XCTestCase {
             Hello xWorldy
             """
         XCTAssertEqual(attrStr.string, expectation)
+    }
+
+    func testLinkRewriting() {
+        var context = Context(environment: .init())
+        let markdown = """
+            Hello [World](https://www.objc.io)
+            """
+        let attrStr = markdown.markdown()
+            .environment(\.linkRewriter) { node, str in
+                Group {
+                    str
+                    "Suffix"
+                        .textColor(.red)
+                }
+            }
+            .run(context: &context)
+        let expectation = """
+            Hello WorldSuffix
+            """
+        XCTAssertEqual(attrStr.string, expectation)
+        let atts = attrStr.attributes(at: 13, effectiveRange: nil)
+        XCTAssertEqual(atts[.foregroundColor] as? NSColor, NSColor.red)
     }
 }
 
