@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import OSLog
 
 /*
  
@@ -297,7 +298,7 @@ class PDFRenderer {
                 annotationsInfo = annotationsAccessoryInfo(pageContentContainer: pageContentContainer)
                 pageFooterInfo = accessoryInfo(accessory: footer)
                 if pageAnnotationsAfter.count != pageAnnotationsBefore.count {
-                    fatalError("Annotations have changed again, should be a while loop?")
+                    logger.warning("Annotations have changed multiple times on page \(pages.count)")
                 }
             }
 
@@ -314,6 +315,8 @@ class PDFRenderer {
 
         self.pages = pages
     }
+
+    let logger = Logger()
 
     private func addWidowAndOrphanWarnings() {
         let range = bookTextStorage.string.startIndex..<bookTextStorage.string.endIndex
