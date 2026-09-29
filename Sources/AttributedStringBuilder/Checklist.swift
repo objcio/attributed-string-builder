@@ -7,7 +7,7 @@
 
 import Foundation
 import Markdown
-import SwiftUI
+import Combine
 
 public struct CheckboxItem: Equatable, Identifiable {
     public struct ID: Equatable, Hashable {
